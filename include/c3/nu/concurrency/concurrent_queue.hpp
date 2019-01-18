@@ -4,9 +4,9 @@
 #include <thread>
 #include <optional>
 
-#include "c3/upsilon/concurrency/mutexed.hpp"
+#include "c3/nu/concurrency/mutexed.hpp"
 
-namespace c3::upsilon {
+namespace c3::nu {
   template<typename T>
   class concurrent_queue {
   private:
@@ -60,11 +60,9 @@ namespace c3::upsilon {
     inline void push(T t, timeout_t timeout) {
       auto deadline = now() + timeout;
 
-      while (true) {
-        // Will throw timed_out if we run out of time
-        auto handle = _base.get_rw(deadline - now());
-        handle->emplace(std::move(t));
-      }
+      // Will throw timed_out if we run out of time
+      auto handle = _base.get_rw(deadline - now());
+      handle->emplace(std::move(t));
     }
 
     inline size_t size() const { return (*_base)->size(); }

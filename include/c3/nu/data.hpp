@@ -16,9 +16,9 @@
 
 static_assert(sizeof(size_t) >= sizeof(uint32_t), "Cannot safely serialise");
 
-#include "c3/upsilon/data/helpers.hpp"
+#include "c3/nu/helpers.hpp"
 
-namespace c3::upsilon {
+namespace c3::nu {
   // Making this a char allows implicit upcasting
   constexpr uint8_t dynamic_size = 0;
 
@@ -191,13 +191,13 @@ namespace c3::upsilon {
     virtual ~static_serialisable() = default;
   };
 
-#define C3_UPSILON_IS_SERIALISABLE(TYPE) \
+#define C3_NU_IS_SERIALISABLE(TYPE) \
   template<> \
   data serialise<TYPE>(TYPE const&); \
   template<> \
   TYPE deserialise<TYPE>(data_const_ref);
 
-#define C3_UPSILON_IS_STATIC_SERIALISABLE(TYPE, SIZE) \
+#define C3_NU_IS_STATIC_SERIALISABLE(TYPE, SIZE) \
   template<> \
   void serialise_static<TYPE>(const TYPE&, data_ref); \
   template<> \
@@ -212,21 +212,21 @@ namespace c3::upsilon {
   TYPE deserialise<TYPE>(data_const_ref);
 
   // These are needed in this header file
-  C3_UPSILON_IS_SERIALISABLE(std::string);
-  C3_UPSILON_IS_SERIALISABLE(gsl::span<const data_const_ref>);
+  C3_NU_IS_SERIALISABLE(std::string);
+  C3_NU_IS_SERIALISABLE(gsl::span<const data_const_ref>);
 
-  C3_UPSILON_IS_STATIC_SERIALISABLE(uint8_t, 8 / 8);
-  C3_UPSILON_IS_STATIC_SERIALISABLE(uint16_t, 16 / 8);
-  C3_UPSILON_IS_STATIC_SERIALISABLE(uint32_t, 32 / 8);
-  C3_UPSILON_IS_STATIC_SERIALISABLE(uint64_t, 64 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(uint8_t, 8 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(uint16_t, 16 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(uint32_t, 32 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(uint64_t, 64 / 8);
 
-  C3_UPSILON_IS_STATIC_SERIALISABLE(int8_t, 8 / 8);
-  C3_UPSILON_IS_STATIC_SERIALISABLE(int16_t, 16 / 8);
-  C3_UPSILON_IS_STATIC_SERIALISABLE(int32_t, 32 / 8);
-  C3_UPSILON_IS_STATIC_SERIALISABLE(int64_t, 64 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(int8_t, 8 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(int16_t, 16 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(int32_t, 32 / 8);
+  C3_NU_IS_STATIC_SERIALISABLE(int64_t, 64 / 8);
 
-#undef C3_UPSILON_IS_SERIALISABLE
-  #undef C3_UPSILON_IS_STATIC_SERIALISABLE
+#undef C3_NU_IS_SERIALISABLE
+  #undef C3_NU_IS_STATIC_SERIALISABLE
 
   template<>
   inline data serialise(const data& b) { return b; }
@@ -246,7 +246,7 @@ namespace c3::upsilon {
 
   template<typename Head, typename... Tail>
   void squash_static_unsafe(data_ref b, Head&& head, Tail&&... tail) {
-    auto len = upsilon::serialised_size<typename remove_all<Head>::type>();
+    auto len = nu::serialised_size<typename remove_all<Head>::type>();
     serialise_static(head, {b.data(), static_cast<data_ref::size_type>(len)});
     if constexpr (sizeof...(Tail) > 0)
       squash_static_unsafe({b.data() + len, static_cast<data_ref::size_type>(b.size() - len)},
@@ -334,4 +334,4 @@ namespace c3::upsilon {
   }
 }
 
-#include "c3/upsilon/data/clean_helpers.hpp"
+#include "c3/nu/clean_helpers.hpp"

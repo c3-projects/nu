@@ -1,5 +1,4 @@
-#include "c3/upsilon/data/base.hpp"
-#include "c3/upsilon/data/common.hpp"
+#include "c3/nu/data.hpp"
 
 #include <algorithm>
 #include <sstream>
@@ -7,7 +6,7 @@
 
 #include <botan/base64.h>
 
-namespace c3::upsilon {
+namespace c3::nu {
   template<typename Int>
   uint8_t log8_int(Int i) {
     static_assert(sizeof(i) < std::numeric_limits<Int>::max(), "log8 of int could cause overflow");

@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-#include "c3/upsilon/concurrency/timeout.hpp"
+#include "c3/nu/concurrency/timeout.hpp"
 
 #include <mutex>
 #include <shared_mutex>
 
-namespace c3::upsilon {
+namespace c3::nu {
   template<typename T>
   class mutexed {
   private:
