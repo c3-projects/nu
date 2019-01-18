@@ -3,7 +3,7 @@
 #include <chrono>
 #include <stdexcept>
 
-namespace c3::upsilon {
+namespace c3::nu {
   using timeout_t = std::chrono::microseconds;
 
   using timeout_clock_t = std::chrono::high_resolution_clock;

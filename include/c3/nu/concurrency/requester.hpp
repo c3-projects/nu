@@ -3,9 +3,9 @@
 //#include <future>
 //#include <deque>
 
-//#include "c3/upsilon/concurrency/concurrent_queue.hpp"
+//#include "c3/nu/concurrency/concurrent_queue.hpp"
 
-//namespace c3::upsilon {
+//namespace c3::nu {
 //  template<typename T, typename... ConsumeArgs>
 //  class requester {
 

@@ -4,10 +4,10 @@
 #include <cstdlib>
 #include <limits>
 
-#include "c3/upsilon/data/base.hpp"
-#include "c3/upsilon/data/integral.hpp"
+#include "c3/nu/data.hpp"
+#include "c3/nu/integral.hpp"
 
-namespace c3::upsilon {
+namespace c3::nu {
   constexpr size_t __MAX_BIT_DATUM_SIZE = 64;
   using n_bits_rep_t = integral_fast_upto_t<__MAX_BIT_DATUM_SIZE>;
   constexpr n_bits_rep_t MAX_BIT_DATUM_SIZE = static_cast<n_bits_rep_t>(__MAX_BIT_DATUM_SIZE);
