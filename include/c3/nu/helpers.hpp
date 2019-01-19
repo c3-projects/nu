@@ -75,3 +75,10 @@
 #define C3_NU_SERIALISED_SIZE(TYPE, VALUE) \
   template<> \
   constexpr size_t c3::nu::serialised_size<TYPE>() { return VALUE; }
+#define C3_NU_SERIALISE_STATIC_WRAPPER(TYPE) \
+  template<> \
+  inline data c3::nu::serialise<TYPE>(const TYPE& t) { \
+    data ret(serialised_size<TYPE>()); \
+    serialise_static<TYPE>(t, ret);\
+    return ret; \
+  }
