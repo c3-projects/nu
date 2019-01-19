@@ -219,7 +219,7 @@ namespace c3::nu {
       for (auto& out_byte : out) {
         for (size_t i = 0; i < CHAR_BIT; ++i) {
           if (in[in_pos].get_bit(in_offset++))
-            out_byte |= (1 << i);
+            out_byte |= (1 << (CHAR_BIT - 1 - i));
           if (in_offset == Bits) {
             in_offset = 0;
             ++in_pos;
@@ -333,7 +333,7 @@ namespace c3::nu {
       for (auto& out_byte : out) {
         for (size_t i = 0; i < CHAR_BIT; ++i) {
           if (in[in_pos].get_bit(++in_offset))
-            out_byte |= (1 << i);
+            out_byte |= (1 << (CHAR_BIT - 1 - i));
           if (in_offset == bits) {
             in_offset = 0;
             ++in_pos;

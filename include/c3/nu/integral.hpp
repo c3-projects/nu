@@ -21,10 +21,10 @@ namespace c3::nu {
   using integral_fast_t = typename integral_fast<Bits>::type;
 
   template<uint64_t MaxValue>
-  using integral_upto_t = integral_t<constexpr_log<uint64_t, uint64_t, MaxValue>()>;
+  using integral_upto_t = integral_t<constexpr_log(MaxValue)>;
 
   template<uint64_t MaxValue>
-  using integral_fast_upto_t = integral_fast_t<constexpr_log<uint64_t, uint64_t, MaxValue>()>;
+  using integral_fast_upto_t = integral_fast_t<constexpr_log(MaxValue)>;
 
 #define C3_NU_INTEGRAL_TYPE(TYPE, MIN, MAX) \
   template<size_t Bits> \

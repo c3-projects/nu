@@ -17,6 +17,7 @@ auto check_one() {
 }
 
 int main() {
+  check_one<1>();
   check_one<2>();
   check_one<5>();
   check_one<7>();

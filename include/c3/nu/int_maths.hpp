@@ -6,11 +6,11 @@ namespace c3::nu {
     return (dividend + devisor - 1) / devisor;
   }
 
-  template<typename Rep, typename Ret, Rep Value>
-  constexpr Ret constexpr_log() {
+  template<typename Rep, typename Ret = Rep>
+  constexpr Ret constexpr_log(Rep value) {
     Ret ret = 0;
 
-    for (Rep i = Value; i != 0; i <<= 1) ++ret;
+    for (Rep i = value; i != 0; i <<= 1) ++ret;
 
     return ret;
   }
