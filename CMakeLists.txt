@@ -43,9 +43,11 @@ install(
   COMPONENT dev
 )
 
-if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/usr/local")
-endif()
+install(
+  DIRECTORY cmake/
+  DESTINATION lib/c3/cmake
+  COMPONENT dev
+)
 
 if(NOT DEFINED CPACK_GENERATOR)
   # TODO: platform logic
