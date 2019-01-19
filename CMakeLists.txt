@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(c3-nu)
+set(PROJECT_BASE_NAME nu)
+project(c3-${PROJECT_BASE_NAME})
 
 set(VERSION 0.2.0)
 
@@ -12,6 +13,7 @@ add_compile_options("-Wall" "-Wextra")
 find_package(Threads REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include(GNUInstallDirs)
 
 file(GLOB_RECURSE tests tests/*.cxx)
 
@@ -31,20 +33,26 @@ endforeach()
 
 enable_testing()
 
+add_library(${PROJECT_NAME} INTERFACE)
+
 SET(CPACK_PACKAGE_VERSION ${VERSION})
 
 install(
-  DIRECTORY include/
-  DESTINATION include/
-  COMPONENT dev
+  TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(
-  DIRECTORY cmake/
-  DESTINATION lib/c3/cmake
-  COMPONENT dev
+  DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+install(
+  EXPORT ${PROJECT_NAME}
+  FILE ${PROJECT_NAME}-config.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
 if(NOT DEFINED CPACK_GENERATOR)
   # TODO: platform logic
   set(CPACK_GENERATOR "DEB")
