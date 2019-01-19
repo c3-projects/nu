@@ -13,7 +13,7 @@ namespace c3::nu {
   }
 
   template<typename Head, typename... Tail>
-  inline void _squash_hybrid_internal(data& b, size_t offset, Head&& head, Tail... tail) {
+  inline void _squash_hybrid_internal(data& b, size_t offset, Head&& head, Tail&&... tail) {
     if constexpr (sizeof...(Tail) == 0) {
       data final = serialise(head);
       b.insert(b.end(), final.begin(), final.end());
@@ -33,7 +33,7 @@ namespace c3::nu {
   }
 
   template<typename Head, typename... Tail>
-  inline void expand_hybrid(data_const_ref b, Head& head, Tail... tail) {
+  inline void expand_hybrid(data_const_ref b, Head& head, Tail&... tail) {
     if constexpr (sizeof...(Tail) == 0) {
       head = deserialise<Head>(b);
     }
