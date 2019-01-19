@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 
 project(nu)
 
-set(VERSION 0.1.2)
+set(VERSION 0.1.3)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_STANDARD 17)
@@ -13,16 +13,12 @@ find_package(Threads REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-file(GLOB_RECURSE source src/*.cpp)
-#add_executable(${PROJECT_NAME} ${source})
-
 file(GLOB_RECURSE tests tests/*.cxx)
 
 foreach(test ${tests})
   file(RELATIVE_PATH test_rel ${CMAKE_SOURCE_DIR}/tests/ ${test})
   get_filename_component(test_fname ${test_rel} NAME_WE)
   get_filename_component(test_dir ${test_rel} DIRECTORY)
-  #string(REGEX REPLACE "/" "_" test_dir ${test_dir})
 
   set(test_name ${test_dir}_${test_fname})
 
@@ -43,9 +39,11 @@ install(
   COMPONENT dev
 )
 
-if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/usr/local")
-endif()
+install(
+  DIRECTORY cmake/
+  DESTINATION lib/c3/cmake
+  COMPONENT dev
+)
 
 if(NOT DEFINED CPACK_GENERATOR)
   # TODO: platform logic
