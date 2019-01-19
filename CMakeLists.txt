@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.9)
 
 set(PROJECT_BASE_NAME nu)
-project(c3-${PROJECT_BASE_NAME})
+set(VERSION )
 
-set(VERSION 0.2.1)
+project(c3-nu VERSION 0.2.1)
+
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_STANDARD 17)
@@ -35,7 +36,7 @@ enable_testing()
 
 add_library(${PROJECT_NAME} INTERFACE)
 
-SET(CPACK_PACKAGE_VERSION ${VERSION})
+SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 
 install(
   TARGETS ${PROJECT_NAME}
