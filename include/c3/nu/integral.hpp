@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include "c3/nu/int_maths.hpp"
+
 namespace c3::nu {
   template<bool> struct range;
 
@@ -18,20 +20,11 @@ namespace c3::nu {
   template<size_t Bits>
   using integral_fast_t = typename integral_fast<Bits>::type;
 
-  template<typename Rep, typename Ret, Rep Value>
-  constexpr Ret constexpr_log() {
-    Ret ret = 0;
-
-    for (Rep i = Value; i != 0; i <<= 1) ++ret;
-
-    return ret;
-  }
+  template<uint64_t MaxValue>
+  using integral_upto_t = integral_t<constexpr_log(MaxValue)>;
 
   template<uint64_t MaxValue>
-  using integral_upto_t = integral_t<constexpr_log<uint64_t, uint64_t, MaxValue>()>;
-
-  template<uint64_t MaxValue>
-  using integral_fast_upto_t = integral_fast_t<constexpr_log<uint64_t, uint64_t, MaxValue>()>;
+  using integral_fast_upto_t = integral_fast_t<constexpr_log(MaxValue)>;
 
 #define C3_NU_INTEGRAL_TYPE(TYPE, MIN, MAX) \
   template<size_t Bits> \
