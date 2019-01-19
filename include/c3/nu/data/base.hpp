@@ -200,19 +200,6 @@ namespace c3::nu {
     virtual ~static_serialisable() = default;
   };
 
-  std::string base64_encode_data(data_const_ref);
-  data base64_decode_data(const std::string&);
-
-  template<typename T>
-  inline std::string base64_encode(const T& t) {
-    return base64_encode_data(serialise(t));
-  }
-
-  template<typename T>
-  inline T base64_decode(const std::string& str) {
-    return deserialise<T>(base64_decode_data(str));
-  }
-
   /// XXX: does not check the size of the output buffer
   template<typename Head, typename... Tail>
   inline void serialise_all(gsl::span<data> output, Head head, Tail... tail){
