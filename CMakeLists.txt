@@ -2,13 +2,12 @@ cmake_minimum_required(VERSION 3.9)
 
 project(nu)
 
-set(VERSION 0.1.0)
+set(VERSION 0.1.1)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_STANDARD 17)
 
-# For some reason, CMAKE_CXX_STANDARD is broken on my system
-add_compile_options("-Wall" "-Wextra" "-std=c++17") #"-pedantic"
+add_compile_options("-Wall" "-Wextra")
 
 find_package(Threads REQUIRED)
 
@@ -58,8 +57,9 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
   set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
-  set(CPACK_DEBIAN_DEV_PACKAGE_NAME "${PROJECT_NAME}-dev")
+  set(CPACK_DEBIAN_PACKAGE_NAME "c3-${PROJECT_NAME}-dev")
   SET(CPACK_COMPONENT_UNSPECIFIED_HIDDEN "TRUE")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-7-dev | libc++-7-dev")
 endif()
 
 INCLUDE(CPack)
