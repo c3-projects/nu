@@ -4,10 +4,21 @@
 #include <cstdlib>
 #include <limits>
 
+#include <ostream>
+
 #include "c3/nu/data.hpp"
 #include "c3/nu/integral.hpp"
 
+#include "c3/nu/int_maths.hpp"
+
+#include <climits>
+
+//! This should work regardless of byte size, but be warned that I have only tested it on octet bytes
+
 namespace c3::nu {
+  // The smallest addressible chunk of information
+  using byte_t = unsigned char;
+
   constexpr size_t __MAX_BIT_DATUM_SIZE = 64;
   using n_bits_rep_t = integral_fast_upto_t<__MAX_BIT_DATUM_SIZE>;
   constexpr n_bits_rep_t MAX_BIT_DATUM_SIZE = static_cast<n_bits_rep_t>(__MAX_BIT_DATUM_SIZE);
@@ -22,17 +33,17 @@ namespace c3::nu {
     size_t BITS() const noexcept { return _bits; };
 
   private:
-    const uint8_t* _ptr;
+    const byte_t* _ptr;
     size_t _bits;
 
   public:
-    constexpr size_t safe_access_bytes() const { return (_bits + 7) / 8; }
-    constexpr size_t n_full_bytes() const { return _bits / 8; }
-    constexpr size_t n_final_bits() const { return _bits % 8; }
+    constexpr size_t safe_access_bytes() const { return divide_ceil<size_t>(_bits, CHAR_BIT); }
+    constexpr size_t n_full_bytes() const { return _bits / CHAR_BIT; }
+    constexpr size_t n_final_bits() const { return _bits % CHAR_BIT; }
 
   public:
     constexpr bool get_bit(size_t pos) const noexcept {
-      return pos < _bits && (_ptr[pos / 8] & (1 << (pos % 8))) != 0;
+      return pos < _bits && (_ptr[pos / CHAR_BIT] & (1 << (CHAR_BIT - 1 - pos % CHAR_BIT))) != 0;
     }
     template<n_bits_rep_t Bits>
     constexpr bit_datum<Bits> get_datum(size_t pos) const noexcept;
@@ -43,7 +54,7 @@ namespace c3::nu {
     constexpr bits_const_ref(decltype(_ptr) ptr, decltype(_bits) bits) :
       _ptr{ptr}, _bits{bits} {}
     constexpr bits_const_ref(data_const_ref b) :
-      _ptr{b.data()}, _bits{static_cast<size_t>(b.size() * 8)} {}
+      _ptr{b.data()}, _bits{static_cast<size_t>(b.size() * CHAR_BIT)} {}
   };
 
   class bits_ref {
@@ -51,34 +62,38 @@ namespace c3::nu {
     size_t BITS() const noexcept { return _bits; };
 
   private:
-    uint8_t* _ptr;
+    byte_t* _ptr;
     size_t _bits;
 
   public:
-    constexpr size_t safe_access_bytes() const { return (_bits + 7) / 8; }
-    constexpr size_t n_full_bytes() const { return _bits / 8; }
-    constexpr size_t n_final_bits() const { return _bits % 8; }
+    constexpr size_t safe_access_bytes() const { return divide_ceil<size_t>(_bits, CHAR_BIT); }
+    constexpr size_t n_full_bytes() const { return _bits / CHAR_BIT; }
+    constexpr size_t n_final_bits() const { return _bits % CHAR_BIT; }
 
   public:
     constexpr bool get_bit(size_t pos) const noexcept {
-      return pos < _bits && (_ptr[pos / 8] & (1 << (pos % 8))) != 0;
+      return pos < _bits && (_ptr[pos / CHAR_BIT] & (1 << (CHAR_BIT - 1 - pos % CHAR_BIT))) != 0;
     }
     constexpr void set_bit(size_t pos) noexcept {
-      if (pos < _bits) (_ptr[pos / 8] |= (1 << (pos % 8)));
+      if (pos < _bits) (_ptr[pos / CHAR_BIT] |= (1 << (CHAR_BIT - 1 - pos % CHAR_BIT)));
     }
     constexpr void clear_bit(size_t pos) noexcept {
-      if (pos < _bits) (_ptr[pos / 8] ^= (1 << (pos % 8)));
+      if (pos < _bits) (_ptr[pos / CHAR_BIT] ^= (1 << (CHAR_BIT - 1 - pos % CHAR_BIT)));
     }
     template<n_bits_rep_t Bits>
     constexpr bit_datum<Bits> get_datum(size_t pos) const noexcept;
     constexpr bit_datum<dynamic_size> get_datum(size_t pos, n_bits_rep_t bits) const noexcept;
-    constexpr uint8_t get_byte(size_t pos) const noexcept;
+
+    template<n_bits_rep_t Bits>
+    constexpr void set_datum(size_t pos, bit_datum<Bits> b) noexcept;
+
+    constexpr byte_t get_byte(size_t pos) const noexcept;
 
   public:
     constexpr bits_ref(decltype(_ptr) ptr, decltype(_bits) bits) :
       _ptr{ptr}, _bits{bits} {}
     constexpr bits_ref(data_ref b) :
-      _ptr{b.data()}, _bits{static_cast<size_t>(b.size() * 8)} {}
+      _ptr{b.data()}, _bits{static_cast<size_t>(b.size() * CHAR_BIT)} {}
   };
 
   template<n_bits_rep_t Bits, typename = Range<true>>
@@ -88,7 +103,7 @@ namespace c3::nu {
   class bit_datum_rep<Bits, Range<(Bits >= 1 && Bits <= 8)>> {
   public:
     using type = uint8_t;
-    static constexpr type Mask = std::numeric_limits<type>::max() >> (7 - Bits);
+    static constexpr type Mask = std::numeric_limits<type>::max() >> (CHAR_BIT - 1 - Bits);
   };
 
   template<n_bits_rep_t Bits>
@@ -138,13 +153,13 @@ namespace c3::nu {
       return safe_set(new_val);
     }
     constexpr bool get_bit(size_t pos) const {
-      return pos < Bits && (_value & (1 << pos)) != 0;
+      return pos < Bits && (_value & (1 << (Bits - pos - 1))) != 0;
     }
     constexpr void set_bit(size_t pos) {
-      if (pos < Bits) (_value |= (1 << pos));
+      if (pos < Bits) (_value |= (1 << (Bits - pos - 1)));
     }
     constexpr void clear_bit(size_t pos) {
-      if (pos < Bits) (_value ^= (1 << pos));
+      if (pos < Bits) (_value ^= (1 << (Bits - pos - 1)));
     }
 
     constexpr rep_t get() const { return _value; }
@@ -152,7 +167,7 @@ namespace c3::nu {
     constexpr operator rep_t() const { return get(); }
     constexpr rep_t operator*() { return get(); }
 
-    inline operator bits_ref() { return { reinterpret_cast<uint8_t*>(&_value), Bits }; }
+    inline operator bits_ref() { return { reinterpret_cast<byte_t*>(&_value), Bits }; }
 
     inline operator bit_datum<dynamic_size>() const;
 
@@ -174,10 +189,10 @@ namespace c3::nu {
     }
 
     static constexpr size_t split_len(size_t n_bytes) {
-      return (n_bytes * 8 + Bits - 1) / Bits;
+      return divide_ceil(n_bytes * CHAR_BIT, Bits);
     }
     static constexpr size_t combine_len(size_t n_data) {
-      return (n_data * Bits + 8 - 1) / 8;
+      return divide_ceil<size_t>(n_data * Bits, CHAR_BIT);
     }
 
     static constexpr void split(data_const_ref in, gsl::span<bit_datum<Bits>> out) {
@@ -202,7 +217,7 @@ namespace c3::nu {
       size_t in_offset = offset % Bits;
 
       for (auto& out_byte : out) {
-        for (size_t i = 0; i < 8; ++i) {
+        for (size_t i = 0; i < CHAR_BIT; ++i) {
           if (in[in_pos].get_bit(in_offset++))
             out_byte |= (1 << i);
           if (in_offset == Bits) {
@@ -247,13 +262,13 @@ namespace c3::nu {
       return *this;
     }
     constexpr bool get_bit(size_t pos) const {
-      return pos < _bits && (_value & (1 << pos)) != 0;
+      return pos < _bits && (_value & (1 << (_bits - pos - 1))) != 0;
     }
     constexpr void set_bit(size_t pos) {
-      if (pos < _bits) (_value |= (1 << pos));
+      if (pos < _bits) (_value |= (1 << (_bits - pos - 1)));
     }
     constexpr void clear_bit(size_t pos) {
-      if (pos < _bits) (_value ^= (1 << pos));
+      if (pos < _bits) (_value ^= (1 << (_bits - pos - 1)));
     }
 
     constexpr rep_t get() const { return _value; }
@@ -261,7 +276,7 @@ namespace c3::nu {
     constexpr operator rep_t() const { return get(); }
     constexpr rep_t operator*() { return get(); }
 
-    inline operator bits_ref() { return { reinterpret_cast<uint8_t*>(&_value), _bits }; }
+    inline operator bits_ref() { return { reinterpret_cast<byte_t*>(&_value), _bits }; }
 
   public:
     constexpr bit_datum(decltype(_bits) bits) : _value{0}, _bits{bits} {
@@ -287,10 +302,10 @@ namespace c3::nu {
     }
 
     static constexpr size_t split_len(size_t n_bytes, n_bits_rep_t bits) {
-      return (n_bytes * 8 + bits - 1) / bits;
+      return divide_ceil(n_bytes * CHAR_BIT, bits);
     }
     static constexpr size_t combine_len(size_t n_data, n_bits_rep_t bits) {
-      return (n_data * bits + 8 - 1) / 8;
+      return divide_ceil<size_t>(n_data * bits, CHAR_BIT - 1);
     }
 
     static constexpr void split(data_const_ref in, gsl::span<bit_datum<dynamic_size>> out, n_bits_rep_t bits) {
@@ -312,11 +327,11 @@ namespace c3::nu {
                                   data_ref out,
                                   n_bits_rep_t bits,
                                   size_t offset = 0) {
-      decltype(in)::index_type in_pos = offset / 8;
-      size_t in_offset = offset % 8;
+      decltype(in)::index_type in_pos = offset / CHAR_BIT;
+      size_t in_offset = offset % CHAR_BIT;
 
       for (auto& out_byte : out) {
-        for (size_t i = 0; i < 8; ++i) {
+        for (size_t i = 0; i < CHAR_BIT; ++i) {
           if (in[in_pos].get_bit(++in_offset))
             out_byte |= (1 << i);
           if (in_offset == bits) {
@@ -346,7 +361,7 @@ namespace c3::nu {
   constexpr bit_datum<Bits> bits_ref::get_datum(size_t pos) const noexcept {
     bit_datum<Bits> ret;
 
-    for (size_t i = 0; i < Bits; ++i)
+    for (n_bits_rep_t i = 0; i < Bits; ++i)
       if (get_bit(pos + i))
         ret.set_bit(i);
 
@@ -356,22 +371,22 @@ namespace c3::nu {
   constexpr bit_datum<dynamic_size> bits_ref::get_datum(size_t pos, n_bits_rep_t bits) const noexcept {
     bit_datum<dynamic_size> ret(bits);
 
-    for (size_t i = 0; i < bits; ++i)
+    for (n_bits_rep_t i = 0; i < bits; ++i)
       if (get_bit(pos + i))
         ret.set_bit(i);
 
     return ret;
   }
 
-  constexpr uint8_t bits_ref::get_byte(size_t pos) const noexcept{
-    return get_datum<8>(pos);
+  constexpr byte_t bits_ref::get_byte(size_t pos) const noexcept{
+    return get_datum<CHAR_BIT>(pos);
   }
 
   template<n_bits_rep_t Bits>
   constexpr bit_datum<Bits> bits_const_ref::get_datum(size_t pos) const noexcept {
     bit_datum<Bits> ret;
 
-    for (size_t i = 0; i < Bits; ++i)
+    for (n_bits_rep_t i = 0; i < Bits; ++i)
       if (get_bit(pos + i))
         ret.set_bit(i);
 
@@ -381,13 +396,27 @@ namespace c3::nu {
   constexpr bit_datum<dynamic_size> bits_const_ref::get_datum(size_t pos, n_bits_rep_t bits) const noexcept {
     bit_datum<dynamic_size> ret(bits);
 
-    for (size_t i = 0; i < bits; ++i)
+    for (n_bits_rep_t i = 0; i < bits; ++i)
       if (get_bit(pos + i))
         ret.set_bit(i);
 
     return ret;
   }
-  constexpr uint8_t bits_const_ref::get_byte(size_t pos) const noexcept {
-    return get_datum<8>(pos);
+  constexpr byte_t bits_const_ref::get_byte(size_t pos) const noexcept {
+    return get_datum<CHAR_BIT>(pos);
+  }
+
+  template<n_bits_rep_t Bits>
+  constexpr void bits_ref::set_datum(size_t pos, bit_datum<Bits> b) noexcept {
+    for (size_t i = 0; i < b.BITS(); ++i)
+      if (b.get_bit(i))
+        set_bit(pos + i);
+  }
+
+  template<n_bits_rep_t Bits>
+  inline std::ostream& operator<<(std::ostream& os, bit_datum<Bits> n) {
+    for(n_bits_rep_t i = 0; i < n.BITS(); ++i)
+      os << (n.get_bit(i) ? 1 : 0);
+    return os;
   }
 }

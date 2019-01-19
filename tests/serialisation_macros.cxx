@@ -1,5 +1,5 @@
 #include "c3/nu/data.hpp"
-#include "c3/nu/helpers.hpp"
+#include "c3/nu/data/helpers.hpp"
 
 using namespace c3;
 
@@ -52,4 +52,4 @@ public:
 // If this compiles, it is successful
 int main() { return 0; }
 
-//#include "c3/nu/serialisation/clean_helpers.hpp"
+#include "c3/nu/data/clean_helpers.hpp"
