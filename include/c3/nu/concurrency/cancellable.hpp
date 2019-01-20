@@ -10,113 +10,17 @@
 
 #include "c3/nu/concurrency/timeout.hpp"
 #include "c3/nu/concurrency/mutexed.hpp"
+#include "c3/nu/concurrency/gateway.hpp"
 
+//! A collection of objects similar to std::future, but with the ability to cancel the result in
+//! a safe manner
 namespace c3::nu {
-  /// A bool that can be set from false to true, but not the other way around
-  class gateway_bool {
-  private:
-    worm_mutexed<bool> _value = false;
-
-    std::condition_variable _on_open;
-    std::mutex _on_open_mutex;
-
-  public:
-    inline bool is_open() const {
-      return *_value.get_ro();
-    }
-
-    inline void open() {
-      *_value.get_rw() = true;
-      _on_open.notify_all();
-    }
-
-    inline operator bool() const { return is_open(); }
-
-    /// IFF the value is not already true, calls func and sets the value to the result
-    ///
-    /// If the value is already true, func will not be called
-    ///
-    /// Returns the value of the gateway_bool, NOT whether func was called.
-    template<typename SetFunc>
-    inline bool maybe_open(SetFunc set_func) {
-      static_assert(std::is_invocable_r_v<bool, SetFunc>,
-                    "func must take no arguments, and return a result castable to bool");
-
-      auto handle = _value.get_rw();
-      if (*handle) return false;
-      // This cannot move from true->false, as we checked that it wasn't true
-      *handle = set_func();
-
-      return *handle;
-    }
-
-    template<typename SetFunc, typename AlreadySetFunc>
-    inline bool maybe_open(SetFunc set_func, AlreadySetFunc already_set_func) {
-      static_assert(std::is_invocable_r_v<bool, SetFunc>,
-                    "func must take no arguments, and return a result castable to bool");
-
-      auto handle = _value.get_rw();
-      if (*handle)
-        already_set_func();
-      else
-        // This cannot move from true->false, as we checked that it wasn't true
-        *handle = set_func();
-      return *handle;
-    }
-
-    inline void wait_for_open() {
-      std::unique_lock lock{_on_open_mutex};
-      _on_open.wait(lock, [this] { return is_open(); } );
-    }
-
-    inline bool wait_for_open(timeout_t timeout) {
-      std::unique_lock lock{_on_open_mutex};
-      return _on_open.wait_for(lock, timeout, [this] { return is_open(); });
-    }
-
-    /// Returns true if the gateway was open, or was opened whilst waiting fo the timeout,
-    /// or returns false
-    inline bool open_after(timeout_t timeout) {
-      std::unique_lock lock{_on_open_mutex};
-
-      if(_on_open.wait_for(lock, timeout, [&] { return is_open(); }))
-        return true;
-
-      // Lock again to make sure we didn't miss it
-      auto handle = _value.get_rw();
-
-      if (*handle)
-        return true;
-      else {
-        *handle = true;
-        return false;
-      }
-    }
-  };
-
+  /// An enum describing the current state of a cancellable provider
+  /// and all of its cancellable chidlren
   enum class cancellable_state {
     Provided,
     Cancelled,
     Empty
-  };
-
-  template<typename T>
-  class _cancellable_shared_state {
-  public:
-    std::optional<T> result = std::nullopt;
-
-    gateway_bool final_state_decided;
-
-  public:
-    bool is_cancelled() const {
-      return final_state_decided && !result.has_value();
-    }
-
-    inline cancellable_state get_state() const {
-      if (!final_state_decided) return cancellable_state::Empty;
-      if (result) return cancellable_state::Provided;
-      else return cancellable_state::Cancelled;
-    }
   };
 
   template<typename T>
@@ -127,9 +31,29 @@ namespace c3::nu {
     friend cancellable_provider<T>;
 
   private:
-    std::shared_ptr<_cancellable_shared_state<T>> shared_state;
+    class shared_state_t {
+    public:
+      std::optional<T> result = std::nullopt;
+
+      gateway_bool final_state_decided;
+
+    public:
+      bool is_cancelled() const {
+        return final_state_decided && !result.has_value();
+      }
+
+      inline cancellable_state get_state() const {
+        if (!final_state_decided) return cancellable_state::Empty;
+        if (result) return cancellable_state::Provided;
+        else return cancellable_state::Cancelled;
+      }
+    };
+
+  private:
+    std::shared_ptr<shared_state_t> shared_state;
 
   public:
+    /// Returns the result if it has been provided or cancelled, otherwise cancels the result
     std::optional<T> get_or_cancel() {
       // Cancel if not set
       shared_state->final_state_decided.maybe_open([&] { return true; });
@@ -137,6 +61,8 @@ namespace c3::nu {
       return shared_state->result;
     }
 
+    /// Returns the result if it has been provided, (or std::nullopt if it was cancelled)
+    /// within the given timeout, otherwise cancels the result
     std::optional<T> get_or_cancel(timeout_t timeout) {
       shared_state->final_state_decided.open_after(timeout);
       return shared_state->result;
@@ -144,6 +70,7 @@ namespace c3::nu {
 
     inline bool is_cancelled() { return shared_state->is_cancelled(); }
 
+    /// Returns the result if it has been provided, otherwise returns std::nullopt
     inline std::optional<T> try_get() {
       if (shared_state->final_state_decided)
         return shared_state->result;
@@ -160,10 +87,13 @@ namespace c3::nu {
   template<typename T>
   class cancellable_provider {
   private:
-    std::shared_ptr<_cancellable_shared_state<T>> shared_state =
-      std::make_shared<_cancellable_shared_state<T>>();
+    std::shared_ptr<typename cancellable<T>::shared_state_t> shared_state =
+      std::make_shared<typename cancellable<T>::shared_state_t>();
 
   public:
+    /// Blocks all requests for state, and if func returns a std::optional with a value sets the result.
+    ///
+    /// If the function throws an exception, the result is cancelled
     template<typename Func>
     inline cancellable_state maybe_provide(Func func) {
       cancellable_state ret;
