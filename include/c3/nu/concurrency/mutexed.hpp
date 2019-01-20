@@ -6,6 +6,7 @@
 #include <shared_mutex>
 
 namespace c3::nu {
+  /// A mutex wrapper that restricts access to a single requester at a time
   template<typename T>
   class mutexed {
   private:
@@ -49,6 +50,7 @@ namespace c3::nu {
 
   public:
     inline handle get_handle() { return {this}; }
+    /// Tries to get a handle within the given timeout, otherwise throws timed_out
     inline handle get_handle(timeout_t timeout) { return {this, timeout}; }
 
     inline handle operator*() { return get_handle(); }
@@ -60,6 +62,7 @@ namespace c3::nu {
     inline ~mutexed() { _mutex.lock(); _mutex.unlock(); }
   };
 
+  /// A mutex wrapper that allows one writer or many readers concurrent access to a variable
   template<typename T>
   class worm_mutexed {
   private:
@@ -134,10 +137,14 @@ namespace c3::nu {
     };
 
   public:
+    /// Gets a read-only handle
     handle_ro get_ro() const { return {this}; }
+    /// Tries to get a read-only handle within the given timeout, otherwise throws timed_out
     handle_ro get_ro(timeout_t timeout) const { return {this, timeout}; }
 
+    /// Gets a read/write handle
     handle_rw get_rw() { return {this}; }
+    /// Tries to get a read/write handle within the given timeout, otherwise throws timed_out
     handle_rw get_rw(timeout_t timeout) { return {this, timeout}; }
 
     handle_rw operator*() { return get_rw(); }

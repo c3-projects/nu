@@ -16,7 +16,7 @@
 //! This should work regardless of byte size, but be warned that I have only tested it on octet bytes
 
 namespace c3::nu {
-  // The smallest addressible chunk of information
+  /// The smallest addressible chunk of information
   using byte_t = unsigned char;
 
   constexpr size_t __MAX_BIT_DATUM_SIZE = 64;
