@@ -48,8 +48,8 @@ namespace c3::nu {
       auto handle = _value.get_rw();
       if (*handle) return false;
       if (set_func()) {
-        _on_open.notify_all();
         *handle = true;
+        _on_open.notify_all();
       }
 
       return *handle;
@@ -69,8 +69,8 @@ namespace c3::nu {
       if (*handle)
         already_set_func();
       else if (set_func()) {
-        _on_open.notify_all();
         *handle = true;
+        _on_open.notify_all();
       }
       return *handle;
     }
