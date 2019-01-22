@@ -27,6 +27,14 @@ namespace c3::nu {
 
     inline operator bool() const { return is_open(); }
 
+    /// A section that, whilst not changing the value of the gateway,
+    /// needs to be protected against it
+    template<typename Func, typename Ret>
+    inline Ret critical_section(Func f) {
+      auto _ = _value.get_rw();
+      return f();
+    }
+
     /// IFF the value is not already true, calls set_func and sets the value to the result
     ///
     /// If the value is already true, set_func will not be called

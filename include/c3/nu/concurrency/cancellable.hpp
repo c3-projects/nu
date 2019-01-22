@@ -20,7 +20,7 @@ namespace c3::nu {
   enum class cancellable_state {
     Provided,
     Cancelled,
-    Empty
+    Undecided
   };
 
   template<typename T>
@@ -35,6 +35,7 @@ namespace c3::nu {
     public:
       std::optional<T> result = std::nullopt;
 
+      gateway_bool some_state_decided;
       gateway_bool final_state_decided;
 
     public:
@@ -43,7 +44,7 @@ namespace c3::nu {
       }
 
       inline cancellable_state get_state() const {
-        if (!final_state_decided) return cancellable_state::Empty;
+        if (!final_state_decided) return cancellable_state::Undecided;
         if (result) return cancellable_state::Provided;
         else return cancellable_state::Cancelled;
       }
@@ -56,7 +57,10 @@ namespace c3::nu {
     /// Returns the result if it has been provided or cancelled, otherwise cancels the result
     std::optional<T> get_or_cancel() {
       // Cancel if not set
-      shared_state->final_state_decided.maybe_open([&] { return true; });
+      shared_state->final_state_decided.maybe_open([&] {
+        shared_state->some_state_decided.open();
+        return true;
+      });
 
       return shared_state->result;
     }
@@ -64,8 +68,48 @@ namespace c3::nu {
     /// Returns the result if it has been provided, (or std::nullopt if it was cancelled)
     /// within the given timeout, otherwise cancels the result
     std::optional<T> get_or_cancel(timeout_t timeout) {
+      // Wait for the final result
       shared_state->final_state_decided.open_after(timeout);
+      // This doesn't need to be locked,
+      // as all functions should check final_state_decicde first
+      shared_state->some_state_decided.open();
       return shared_state->result;
+    }
+
+    /// Blocks until a result is provided or cancelled, and returns it
+    std::optional<T> wait() {
+      shared_state->some_state_decided.wait_for_open();
+      return shared_state->result;
+    }
+    /// Blocks until a result is provided or cancelled, and returns it
+    std::optional<T> wait(timeout_t timeout) {
+      shared_state->some_state_decided.wait_for_open(timeout);
+
+      std::optional<T> ret;
+
+      // Make sure we serialise the reads to result
+      shared_state->final_state_decided.maybe_open([&] {
+        if (shared_state->result) {
+          ret = shared_state->result;
+          return true;
+        }
+        else return false;
+      });
+
+      return ret;
+    }
+
+    /// Blocks until a final result is provided or cancelled, and returns it
+    std::optional<T> wait_final() {
+      shared_state->final_state_decided.wait_for_open();
+      return shared_state->result;
+    }
+    /// Blocks until a final result is provided or cancelled, and returns it
+    std::optional<T> wait_final(timeout_t timeout) {
+      shared_state->final_state_decided.wait_for_open(timeout);
+      return shared_state->final_state_decided.critical_section([&] {
+        return shared_state->result;
+      });
     }
 
     inline bool is_cancelled() { return shared_state->is_cancelled(); }
@@ -74,8 +118,18 @@ namespace c3::nu {
     inline std::optional<T> try_get() {
       if (shared_state->final_state_decided)
         return shared_state->result;
+      else if (shared_state->some_state_decided) {
+        shared_state->final_state_decided.open();
+        return shared_state->result;
+      }
       else
         return std::nullopt;
+    }
+
+    /// Returns the final result if it has been provided, otherwise returns std::nullopt
+    inline std::optional<T> try_get_final() {
+      if (shared_state->final_state_decided)
+        return  shared_state->result;
     }
 
     inline cancellable_state get_state() const { return shared_state->get_state(); }
@@ -91,9 +145,6 @@ namespace c3::nu {
       std::make_shared<typename cancellable<T>::shared_state_t>();
 
   public:
-    /// Blocks all requests for state, and if func returns a std::optional with a value sets the result.
-    ///
-    /// If the function throws an exception, the result is cancelled
     template<typename Func>
     inline cancellable_state maybe_provide(Func func) {
       cancellable_state ret;
@@ -104,16 +155,50 @@ namespace c3::nu {
 
           if (result) {
             shared_state->result = std::move(result);
+            shared_state->some_state_decided.open();
             ret = cancellable_state::Provided;
 
             return true;
           }
           else {
-            ret = cancellable_state::Empty;
+            ret = cancellable_state::Undecided;
             return false;
           }
         } catch(...) {
           ret = cancellable_state::Cancelled;
+          shared_state->some_state_decided.open();
+          return true;
+        }
+      });
+
+      return ret;
+    }
+
+    /// Similar to maybe_provide, but does not set the final state unless cancelled.
+    ///
+    /// If the function throws an exception, the result is cancelled
+    template<typename Func>
+    inline cancellable_state maybe_update(Func func) {
+      cancellable_state ret;
+
+      shared_state->final_state_decided.maybe_open([&] {
+        try {
+          auto result = func();
+
+          if (result) {
+            shared_state->result = std::move(result);
+            shared_state->some_state_decided.open();
+            ret = cancellable_state::Provided;
+
+            return false;
+          }
+          else {
+            ret = cancellable_state::Undecided;
+            return false;
+          }
+        } catch(...) {
+          ret = cancellable_state::Cancelled;
+          shared_state->some_state_decided.open();
           return true;
         }
       });
