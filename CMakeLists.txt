@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.9)
 set(PROJECT_BASE_NAME nu)
 set(VERSION )
 
-project(c3-nu VERSION 0.2.2)
+project(c3-nu VERSION 0.2.3)
 
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
