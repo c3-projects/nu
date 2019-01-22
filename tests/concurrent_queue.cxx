@@ -10,5 +10,5 @@ int main() {
   q.pop();
 
   q.push(1, timeout_t{1});
-  q.pop(timeout_t{1});
+  q.pop().wait_final(1s);
 }

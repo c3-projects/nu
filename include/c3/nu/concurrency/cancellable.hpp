@@ -107,12 +107,16 @@ namespace c3::nu {
     /// Blocks until a final result is provided or cancelled, and returns it
     std::optional<T> wait_final(timeout_t timeout) {
       shared_state->final_state_decided.wait_for_open(timeout);
-      return shared_state->final_state_decided.critical_section([&] {
-        return shared_state->result;
+      std::optional<T> ret;
+      shared_state->final_state_decided.critical_section([&] {
+        ret = shared_state->result;
       });
+      return ret;
     }
 
     inline bool is_cancelled() { return shared_state->is_cancelled(); }
+
+    inline bool is_decided() { return shared_state->final_state_decided; }
 
     /// Returns the result if it has been provided, otherwise returns std::nullopt
     inline std::optional<T> try_get() {
@@ -151,7 +155,7 @@ namespace c3::nu {
 
       shared_state->final_state_decided.maybe_open([&] {
         try {
-          auto result = func();
+          std::optional<T> result = func();
 
           if (result) {
             shared_state->result = std::move(result);
@@ -183,7 +187,7 @@ namespace c3::nu {
 
       shared_state->final_state_decided.maybe_open([&] {
         try {
-          auto result = func();
+          std::optional<T> result = func();
 
           if (result) {
             shared_state->result = std::move(result);
@@ -207,6 +211,8 @@ namespace c3::nu {
     }
 
     inline bool is_cancelled() { return shared_state->is_cancelled(); }
+
+    inline bool is_decided() { return shared_state->final_state_decided; }
 
     inline cancellable_state get_state() const { return shared_state->get_state(); }
 
