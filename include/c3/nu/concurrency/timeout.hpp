@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 namespace c3::nu {
-  using timeout_t = std::chrono::microseconds;
+  using timeout_t = std::chrono::duration<uint64_t, std::chrono::microseconds::period>;
 
   using timeout_clock_t = std::chrono::high_resolution_clock;
   using now_t = std::chrono::time_point<timeout_clock_t, timeout_t>;
