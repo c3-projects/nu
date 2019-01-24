@@ -99,10 +99,12 @@ namespace c3::nu {
       // Lock again to make sure we didn't miss it
       auto handle = _value.get_rw();
 
-      if (*handle)
+      if (*handle) {
         return true;
+      }
       else {
         *handle = true;
+        _on_open.notify_all();
         return false;
       }
     }
