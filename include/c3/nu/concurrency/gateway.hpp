@@ -1,7 +1,8 @@
 #pragma once
 
-#include<atomic>
+#include <atomic>
 #include <condition_variable>
+#include <functional>
 
 #include "c3/nu/concurrency/mutexed.hpp"
 
@@ -43,11 +44,7 @@ namespace c3::nu {
     /// If the value is already true, set_func will not be called
     ///
     /// Returns the value of the gateway_bool, NOT whether set_func was called.
-    template<typename SetFunc>
-    inline bool maybe_open(SetFunc set_func) {
-      static_assert(std::is_invocable_r_v<bool, SetFunc>,
-                    "func must take no arguments, and return a result castable to bool");
-
+    inline bool maybe_open(std::function<bool()> set_func) {
       std::scoped_lock lock{_value_set_mutex};
 
       if (!_value && set_func()) {
@@ -63,11 +60,8 @@ namespace c3::nu {
     /// If the value is already true, already_set_func will be called instead of set_func
     ///
     /// Returns the value of the gateway_bool, NOT whether set_func was called.
-    template<typename SetFunc, typename AlreadySetFunc>
-    inline bool maybe_open(SetFunc set_func, AlreadySetFunc already_set_func) {
-      static_assert(std::is_invocable_r_v<bool, SetFunc>,
-                    "func must take no arguments, and return a result castable to bool");
-
+    template<typename AlreadySetFunc>
+    inline bool maybe_open(std::function<bool()> set_func, AlreadySetFunc already_set_func) {
       std::scoped_lock lock{_value_set_mutex};
 
       if (_value) already_set_func();
