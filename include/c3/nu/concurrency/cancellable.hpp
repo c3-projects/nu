@@ -181,6 +181,10 @@ namespace c3::nu {
       return {std::make_shared<mapped_state<Ret>>(shared_state, std::move(func))};
     }
 
+  public:
+    template<typename Other>
+    operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
+
   private:
     inline cancellable(decltype(shared_state) shared_state) : shared_state{shared_state} {}
   };
@@ -340,6 +344,10 @@ namespace c3::nu {
     inline cancellable_provider<Ret> map(std::function<T(Ret)> func) {
       return {std::make_shared<mapped_state<Ret>>(shared_state, func)};
     }
+
+  public:
+    template<typename Other>
+    operator cancellable_provider<Other>() { return map([](T t) { return Other{t}; }); }
 
   public:
     inline cancellable<T> get_cancellable() { return { shared_state }; }
