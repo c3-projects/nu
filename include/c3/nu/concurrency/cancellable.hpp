@@ -338,7 +338,7 @@ namespace c3::nu {
 
     inline cancellable_state get_state() const { return shared_state->get_state(); }
 
-    inline void cancel() { shared_state->final_state_decided.open(); }
+    inline void cancel() { shared_state->final_state_decided().open(); }
 
     template<typename Ret>
     inline cancellable_provider<Ret> map(std::function<T(Ret)> func) {
