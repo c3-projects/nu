@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-set(VERSION 0.4.0)
+set(VERSION 0.4.1)
 
 project(c3-nu VERSION ${VERSION})
 
