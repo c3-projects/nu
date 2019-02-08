@@ -9,6 +9,7 @@ int main() {
   c3::nu::cancellable_provider<uint64_t> provider_1;
   c3::nu::cancellable_provider<uint64_t> provider_2;
   c3::nu::cancellable_provider<uint64_t> provider_3;
+  c3::nu::cancellable_provider<uint64_t> provider_4;
 
   c3::nu::gateway_bool got_first_datum;
   c3::nu::gateway_bool got_second_datum;
@@ -20,7 +21,7 @@ int main() {
     provider_0.maybe_update([] { return 420; });
     got_first_datum.wait_for_open();
 
-    provider_1.maybe_provide([] { return 69; });
+    provider_1.provide(69);
     got_second_datum.wait_for_open();
 
     if (!provider_2.is_cancelled())
@@ -28,12 +29,15 @@ int main() {
 
     auto provider_3_mapped = provider_3.map<std::string>([](auto s) { return s.length(); });
     provider_3_mapped.maybe_provide([]() { return "foobar"; });
+
+    provider_4.provide(180);
   }}.detach();
 
   auto consumer_0 = provider_0.get_cancellable();
   auto consumer_1 = provider_1.get_cancellable();
   auto consumer_2 = provider_2.get_cancellable();
   auto consumer_3 = provider_3.get_cancellable();
+  auto consumer_4 = provider_4.get_cancellable();
 
   if (consumer_0.try_get())
     throw std::runtime_error("Early provision");
@@ -83,6 +87,16 @@ int main() {
 
   if (consumer_3.try_take(1s) != std::string("foobar").length())
     throw std::runtime_error("Failed mapped provision");
+
+  c3::nu::gateway_bool consumed_4;
+
+  consumer_4.take_on_complete([&](auto i) {
+    if (i != 180)
+      throw std::runtime_error("Failed take_on_complete provision");
+    consumed_4.open();
+  });
+
+  consumed_4.wait_for_open();
 
   return 0;
 }

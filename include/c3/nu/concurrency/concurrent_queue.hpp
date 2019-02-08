@@ -7,46 +7,88 @@
 #include "c3/nu/concurrency/cancellable.hpp"
 
 namespace c3::nu {
-  // Condvars are too fiddly for me to get to work in this case
-  // TODO: move to a condvar-based system rather than a poll-based one
   template<typename T>
   class concurrent_queue {
   private:
-    worm_mutexed<std::queue<T>> _base;
+    std::queue<T> _base;
+    std::queue<cancellable_provider<T>> _requesters;
+    mutable std::mutex _mutex;
+
+  private:
+    inline void _push_one(T t) {
+      while (_requesters.size() > 0) {
+        auto req = _requesters.front();
+        _requesters.pop();
+        if (req.provide(t))
+          return;
+      }
+
+      _base.emplace(std::move(t));
+    }
 
   public:
     inline cancellable<T> pop() {
-      cancellable_provider<T> provider;
+      std::unique_lock lock{_mutex};
+      if (_base.size() > 0) {
+        auto ret = _base.front();
+        _base.pop();
+        return { std::move(ret) };
+      }
+      else {
+        auto requester = _requesters.emplace();
+        return requester.get_cancellable();
+      }
+    }
 
-      std::thread([=]() mutable {
-        do {
-          auto handle = _base.get_rw();
-          if (handle->size() == 0) { std::this_thread::yield(); continue; }
-          provider.maybe_provide([&] {
-            T ret = std::move(handle->front());
-            handle->pop();
-            return ret;
-          });
-        }
-        while (!provider.is_decided());
-      }).detach();
+    inline std::optional<T> try_pop() {
+      std::unique_lock lock{_mutex};
+      if (_base.size() > 0) {
+        auto ret = _base.front();
+        _base.pop();
+        return { std::move(ret) };
+      }
+      else
+        return std::nullopt;
+    }
 
-      return provider.get_cancellable();
+    inline std::vector<T> pop_all() {
+      std::unique_lock lock{_mutex};
+
+      std::vector<T> ret;
+
+      for (auto iter = ret.rbegin(); iter != ret.rend(); ++iter)
+        ret.emplace_back(std::move(*iter));
+
+      _base = decltype(_base){};
+
+      return ret;
     }
 
     inline void push(T t) {
-      auto handle = *_base;
-      handle->emplace(std::move(t));
+      std::unique_lock lock{_mutex};
+
+      _push_one(std::move(t));
     }
 
-    inline void push(T t, timeout_t timeout) {
-      auto deadline = now() + timeout;
+    template<typename Iter>
+    inline void push_all(Iter begin, Iter end) {
+      std::unique_lock lock{_mutex};
 
-      // Will throw timed_out if we run out of time
-      auto handle = _base.get_rw(deadline - now());
-      handle->emplace(std::move(t));
+      for (auto iter = begin; iter != end; ++iter)
+        _push_one(*iter);
     }
 
-    inline size_t size() const { return (*_base)->size(); }
+    template<typename Iter>
+    inline void move_all(Iter begin, Iter end) {
+      std::unique_lock lock{_mutex};
+
+      for (auto iter = begin; iter != end; ++iter)
+        _push_one(std::move(*iter));
+    }
+
+    inline size_t size() const {
+      std::unique_lock lock{_mutex};
+      return _base.size();
+    }
   };
 }
