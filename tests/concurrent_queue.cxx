@@ -6,9 +6,9 @@ using namespace std::chrono_literals;
 int main() {
   concurrent_queue<int> q;
 
-  q.push(1, 10ms);
+  q.push(1);
   q.pop();
 
-  q.push(1, timeout_t{1});
+  q.push(1);
   q.pop().wait_final(1s);
 }

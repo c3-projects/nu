@@ -70,6 +70,7 @@ namespace c3::nu {
     class simple_state;
     template<typename Base>
     class mapped_state;
+    class predetermined_state;
 
   protected:
     std::shared_ptr<shared_state_t> shared_state;
@@ -201,6 +202,12 @@ namespace c3::nu {
   public:
     template<typename Other>
     operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
+
+  public:
+    // For when you need to return a cancellable, but you already have the value
+    inline cancellable(T t) : shared_state{std::make_shared<simple_state>()} {
+      shared_state->set_value(std::move(t));
+    }
 
   private:
     inline cancellable(decltype(shared_state) shared_state) : shared_state{shared_state} {}
