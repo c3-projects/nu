@@ -10,6 +10,7 @@ int main() {
 
   pb.post(0, 69);
   pb.post(1, 420);
+  pb.post(1, 180);
 
   if (lb_0->n_to_collect() != 1)
     throw std::runtime_error("Size corrupted");
@@ -23,7 +24,7 @@ int main() {
 
   {
     auto lb_1_c = lb_1->collect_all();
-    if (lb_1_c.size() != 1 || lb_1_c[0] != 420)
+    if (lb_1_c.size() != 2 || lb_1_c[0] != 420)
       throw std::runtime_error("collect_all corrupted");
   }
 
