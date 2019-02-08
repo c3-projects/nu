@@ -103,5 +103,9 @@ namespace c3::nu {
         }
       }
     }
+
+  public:
+    inline gateway_bool() = default;
+    inline gateway_bool(bool b) : _value{b} {};
   };
 }
