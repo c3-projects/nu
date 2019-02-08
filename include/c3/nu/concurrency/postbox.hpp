@@ -41,6 +41,16 @@ namespace c3::nu {
       get(id)->post(v);
     }
 
+    template<typename Iter>
+    inline void post_all(Id id, Iter begin, Iter end) {
+      get(id)->post_all(begin, end);
+    }
+
+    template<typename Iter>
+    inline void move_all(Id id, Iter begin, Iter end) {
+      get(id)->move_all(begin, end);
+    }
+
   public:
     inline std::shared_ptr<letterbox<Value>> operator[](Id id) { return get(id); }
   };
@@ -54,7 +64,17 @@ namespace c3::nu {
       _box.push(std::move(t));
     }
 
-    inline cancellable<T> collect_one() {
+    template<typename Iter>
+    inline void post_all(Iter begin, Iter end) {
+      _box.push_all(begin, end);
+    }
+
+    template<typename Iter>
+    inline void move_all(Iter begin, Iter end) {
+      _box.move_all(begin, end);
+    }
+
+    inline cancellable<T> collect() {
       return _box.pop();
     }
 
