@@ -207,6 +207,8 @@ namespace c3::nu {
     // For when you need to return a cancellable, but you already have the value
     inline cancellable(T t) : shared_state{std::make_shared<simple_state>()} {
       shared_state->set_value(std::move(t));
+      shared_state->final_state_decided().open();
+      shared_state->some_state_decided().open();
     }
 
   private:
