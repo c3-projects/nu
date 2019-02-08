@@ -12,7 +12,7 @@ namespace c3::nu {
   private:
     std::queue<T> _base;
     std::queue<cancellable_provider<T>> _requesters;
-    std::mutex _mutex;
+    mutable std::mutex _mutex;
 
   public:
     inline cancellable<T> pop() {
