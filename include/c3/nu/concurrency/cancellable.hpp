@@ -21,7 +21,8 @@ namespace c3::nu {
     Provided,
     PartiallyProvided,
     Cancelled,
-    Undecided
+    Undecided,
+    AlreadyDecided
   };
 
   template<typename T>
@@ -305,6 +306,9 @@ namespace c3::nu {
           shared_state->some_state_decided().open();
           return true;
         }
+      },
+      [&] {
+        ret = cancellable_state::AlreadyDecided;
       });
 
       return ret;
@@ -339,10 +343,48 @@ namespace c3::nu {
         }
       },
       [&] {
-        if (shared_state->has_value())
-          ret = cancellable_state::Provided;
-        else
-          ret = cancellable_state::Cancelled;
+        ret = cancellable_state::AlreadyDecided;
+      });
+
+      return ret;
+    }
+
+    // Returns true if the value was undecided before the function was called
+    inline bool provide(T val) {
+      bool ret;
+
+      shared_state->final_state_decided().maybe_open([&] {
+        try {
+          shared_state->set_value(std::move(val));
+          shared_state->some_state_decided().open();
+          ret = true;
+        } catch(...) {
+          ret = true;
+          shared_state->some_state_decided().open();
+        }
+        return true;
+      },
+      [&] {
+        ret = false;
+      });
+
+      return ret;
+    }
+
+    // Returns true if the value was undecided before the function was called
+    inline bool update(T val) {
+      bool ret;
+
+      shared_state->final_state_decided().maybe_open([&] {
+        ret = true;
+        try {
+          shared_state->set_value(std::move(val));
+        } catch(...) {}
+        shared_state->some_state_decided().open();
+        return false;
+      },
+      [&] {
+        ret = false;
       });
 
       return ret;
