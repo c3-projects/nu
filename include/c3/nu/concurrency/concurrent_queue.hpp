@@ -7,8 +7,6 @@
 #include "c3/nu/concurrency/cancellable.hpp"
 
 namespace c3::nu {
-  // Condvars are too fiddly for me to get to work in this case
-  // TODO: move to a condvar-based system rather than a poll-based one
   template<typename T>
   class concurrent_queue {
   private:
