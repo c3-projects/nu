@@ -76,20 +76,20 @@ namespace c3::nu {
     std::shared_ptr<shared_state_t> shared_state;
 
   public:
-    /// Blocks until a result is provided or cancelled, and returns it
+    /// Blocks until a result is provided or cancelled
     inline void wait() {
       shared_state->some_state_decided().wait_for_open();
     }
-    /// Blocks until a result is provided or cancelled, and returns it
+    /// Blocks until a result is provided or cancelled, or the timeout is reached
     inline bool wait(timeout_t timeout) {
       return shared_state->some_state_decided().wait_for_open(timeout);
     }
 
-    /// Blocks until a final result is provided or cancelled, and returns it
+    /// Blocks until a final result is provided or cancelled
     inline void wait_final() {
       shared_state->final_state_decided().wait_for_open();
     }
-    /// Blocks until a final result is provided or cancelled, and returns it
+    /// Blocks until a final result is provided or cancelled, or the timeout is reached
     inline bool wait_final(timeout_t timeout) {
       return shared_state->final_state_decided().wait_for_open(timeout);
     }
