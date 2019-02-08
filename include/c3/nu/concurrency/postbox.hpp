@@ -61,7 +61,8 @@ namespace c3::nu {
     inline std::vector<T> collect_all() {
       std::vector<T> ret;
       while (auto x = _box.try_pop())
-        ret.emplace(std::move(x));
+        ret.emplace_back(std::move(*x));
+      return ret;
     }
 
     inline size_t n_to_collect() const {

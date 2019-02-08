@@ -14,5 +14,17 @@ int main() {
   if (lb_0->n_to_collect() != 1)
     throw std::runtime_error("Size corrupted");
 
-  lb_0->collect_one();
+  {
+    auto lb_0_c = lb_0->collect_one();
+    lb_0_c.wait();
+    if (lb_0_c.try_take() != 69)
+      throw std::runtime_error("lb0 corrupted");
+  }
+
+  {
+    auto lb_1_c = lb_1->collect_all();
+    if (lb_1_c.size() != 1 || lb_1_c[0] != 420)
+      throw std::runtime_error("collect_all corrupted");
+  }
+
 }
