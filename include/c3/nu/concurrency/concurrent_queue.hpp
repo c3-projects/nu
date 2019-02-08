@@ -14,6 +14,18 @@ namespace c3::nu {
     std::queue<cancellable_provider<T>> _requesters;
     mutable std::mutex _mutex;
 
+  private:
+    inline void _push_one(T t) {
+      while (_requesters.size() > 0) {
+        auto req = _requesters.front();
+        _requesters.pop();
+        if (req.provide(t))
+          return;
+      }
+
+      _base.emplace(std::move(t));
+    }
+
   public:
     inline cancellable<T> pop() {
       std::unique_lock lock{_mutex};
@@ -39,17 +51,39 @@ namespace c3::nu {
         return std::nullopt;
     }
 
+    inline std::vector<T> pop_all() {
+      std::unique_lock lock{_mutex};
+
+      std::vector<T> ret;
+
+      for (auto iter = ret.rbegin(); iter != ret.rend(); ++iter)
+        ret.emplace_back(std::move(*iter));
+
+      _base = decltype(_base){};
+
+      return ret;
+    }
+
     inline void push(T t) {
       std::unique_lock lock{_mutex};
 
-      while (_requesters.size() > 0) {
-        auto req = _requesters.front();
-        _requesters.pop();
-        if (req.provide(t))
-          return;
-      }
+      _push_one(std::move(t));
+    }
 
-      _base.emplace(std::move(t));
+    template<typename Iter>
+    inline void push_all(Iter begin, Iter end) {
+      std::unique_lock lock{_mutex};
+
+      for (auto iter = begin; iter != end; ++iter)
+        _push_one(*iter);
+    }
+
+    template<typename Iter>
+    inline void move_all(Iter begin, Iter end) {
+      std::unique_lock lock{_mutex};
+
+      for (auto iter = begin; iter != end; ++iter)
+        _push_one(std::move(*iter));
     }
 
     inline size_t size() const {
