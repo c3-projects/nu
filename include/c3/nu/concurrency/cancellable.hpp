@@ -21,7 +21,8 @@ namespace c3::nu {
     Provided,
     PartiallyProvided,
     Cancelled,
-    Undecided
+    Undecided,
+    AlreadyDecided
   };
 
   template<typename T>
@@ -69,25 +70,26 @@ namespace c3::nu {
     class simple_state;
     template<typename Base>
     class mapped_state;
+    class predetermined_state;
 
   protected:
     std::shared_ptr<shared_state_t> shared_state;
 
   public:
-    /// Blocks until a result is provided or cancelled, and returns it
+    /// Blocks until a result is provided or cancelled
     inline void wait() {
       shared_state->some_state_decided().wait_for_open();
     }
-    /// Blocks until a result is provided or cancelled, and returns it
+    /// Blocks until a result is provided or cancelled, or the timeout is reached
     inline bool wait(timeout_t timeout) {
       return shared_state->some_state_decided().wait_for_open(timeout);
     }
 
-    /// Blocks until a final result is provided or cancelled, and returns it
+    /// Blocks until a final result is provided or cancelled
     inline void wait_final() {
       shared_state->final_state_decided().wait_for_open();
     }
-    /// Blocks until a final result is provided or cancelled, and returns it
+    /// Blocks until a final result is provided or cancelled, or the timeout is reached
     inline bool wait_final(timeout_t timeout) {
       return shared_state->final_state_decided().wait_for_open(timeout);
     }
@@ -181,9 +183,33 @@ namespace c3::nu {
       return {std::make_shared<mapped_state<Ret>>(shared_state, std::move(func))};
     }
 
+    inline void get_on_complete(std::function<void(T)> func) {
+      std::thread([=, func{std::move(func)}]() {
+        wait_final();
+        if (auto x = try_get())
+          func(std::move(*x));
+      }).detach();
+    }
+
+    inline void take_on_complete(std::function<void(T)> func) {
+      std::thread([=, func{std::move(func)}]() {
+        wait_final();
+        if (auto x = try_take())
+          func(std::move(*x));
+      }).detach();
+    }
+
   public:
     template<typename Other>
     operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
+
+  public:
+    // For when you need to return a cancellable, but you already have the value
+    inline cancellable(T t) : shared_state{std::make_shared<simple_state>()} {
+      shared_state->set_value(std::move(t));
+      shared_state->final_state_decided().open();
+      shared_state->some_state_decided().open();
+    }
 
   private:
     inline cancellable(decltype(shared_state) shared_state) : shared_state{shared_state} {}
@@ -289,6 +315,9 @@ namespace c3::nu {
           shared_state->some_state_decided().open();
           return true;
         }
+      },
+      [&] {
+        ret = cancellable_state::AlreadyDecided;
       });
 
       return ret;
@@ -323,10 +352,48 @@ namespace c3::nu {
         }
       },
       [&] {
-        if (shared_state->has_value())
-          ret = cancellable_state::Provided;
-        else
-          ret = cancellable_state::Cancelled;
+        ret = cancellable_state::AlreadyDecided;
+      });
+
+      return ret;
+    }
+
+    // Returns true if the value was undecided before the function was called
+    inline bool provide(T val) {
+      bool ret;
+
+      shared_state->final_state_decided().maybe_open([&] {
+        try {
+          shared_state->set_value(std::move(val));
+          shared_state->some_state_decided().open();
+          ret = true;
+        } catch(...) {
+          ret = true;
+          shared_state->some_state_decided().open();
+        }
+        return true;
+      },
+      [&] {
+        ret = false;
+      });
+
+      return ret;
+    }
+
+    // Returns true if the value was undecided before the function was called
+    inline bool update(T val) {
+      bool ret;
+
+      shared_state->final_state_decided().maybe_open([&] {
+        ret = true;
+        try {
+          shared_state->set_value(std::move(val));
+        } catch(...) {}
+        shared_state->some_state_decided().open();
+        return false;
+      },
+      [&] {
+        ret = false;
       });
 
       return ret;
