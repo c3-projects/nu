@@ -181,6 +181,22 @@ namespace c3::nu {
       return {std::make_shared<mapped_state<Ret>>(shared_state, std::move(func))};
     }
 
+    inline void get_on_complete(std::function<T> func) {
+      std::thread([=, func{std::move(func)}]() {
+        wait_final();
+        if (auto x = try_get())
+          func(std::move(*x));
+      }).detach();
+    }
+
+    inline void take_on_complete(std::function<T> func) {
+      std::thread([=, func{std::move(func)}]() {
+        wait_final();
+        if (auto x = try_take())
+          func(std::move(*x));
+      }).detach();
+    }
+
   public:
     template<typename Other>
     operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
