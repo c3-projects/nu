@@ -28,9 +28,9 @@ namespace c3::nu {
       auto handle = _boxes.get_rw();
       auto iter = handle->find(id);
       if (iter == handle->end())
-        return handle->emplace(id, std::make_shared<letterbox<Value>>());
+        return handle->emplace(id, std::make_shared<letterbox<Value>>()).first->second;
       else
-        return *iter;
+        return iter->second;
     }
     inline void remove(Id id) {
       auto handle = _boxes.get_rw();
@@ -54,7 +54,7 @@ namespace c3::nu {
       _box.push(std::move(t));
     }
 
-    inline T collect_one() {
+    inline cancellable<T> collect_one() {
       return _box.pop();
     }
 
