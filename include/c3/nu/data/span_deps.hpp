@@ -1,0 +1,6 @@
+#pragma once
+
+// WTF SORT OF IDIOT CAME UP WITH TERMINATE ON BOUNDS CHECK??
+#define GSL_THROW_ON_CONTRACT_VIOLATION
+
+#include <gsl/span>
