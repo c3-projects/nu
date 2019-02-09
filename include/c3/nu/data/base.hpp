@@ -109,6 +109,7 @@ namespace c3::nu {
   template<typename T>
   constexpr size_t serialised_size();
 
+  /// XXX: does not strip qualifiers, as that would confuse parameter type
   template<typename T>
   data serialise(const T& t) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
@@ -122,6 +123,7 @@ namespace c3::nu {
 
   inline data serialise(data&& b) { return std::forward<data&&>(b); }
 
+  /// XXX: does not strip qualifiers, as that would confuse return type
   template<typename T>
   inline T deserialise(data_const_ref d) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
@@ -141,7 +143,9 @@ namespace c3::nu {
   /// XXX: returns 0 if not statically serialisable
   template<typename T>
   constexpr size_t serialised_size() {
-    if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
+    if constexpr (!std::is_same_v<typename remove_all<T>::type, T>)
+      return serialised_size<typename remove_all<T>::type>();
+    else if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
       return T::_serialised_size;
     else if constexpr (is_fixed_span_v<T>)
       return serialised_size<typename T::value_type>() * T::extent;
@@ -156,9 +160,9 @@ namespace c3::nu {
   template<typename A, typename... StaticT>
   constexpr size_t total_serialised_size() {
     if constexpr (sizeof...(StaticT) == 0)
-      return serialised_size<typename remove_all<A>::type>();
+      return serialised_size<A>();
     else
-      return serialised_size<typename remove_all<A>::type>() + total_serialised_size<StaticT...>();
+      return serialised_size<A>() + total_serialised_size<StaticT...>();
   }
 
   template<typename A, typename... StaticT>

@@ -6,12 +6,10 @@
 namespace c3::nu {
   template<typename SizeType, typename Head, typename... Tail>
   inline void _squash_internal(data& acc, Head&& head, Tail&&... tail) {
-    using HeadBase = typename remove_all<Head>::type;
-
-    if constexpr (is_static_serialisable_v<HeadBase>) {
+    if constexpr (is_static_serialisable_v<Head>) {
       auto current_len = acc.size();
-      acc.resize(current_len + serialised_size<HeadBase>());
-      data_ref to_fill{acc.data() + current_len, serialised_size<HeadBase>()};
+      acc.resize(current_len + serialised_size<Head>());
+      data_ref to_fill{acc.data() + current_len, serialised_size<Head>()};
       serialise_static(head, to_fill);
     }
     else {
