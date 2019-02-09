@@ -1,8 +1,5 @@
 #pragma once
 
-// WTF SORT OF IDIOT CAME UP WITH TERMINATE ON BOUNDS CHECK??
-#define GSL_THROW_ON_CONTRACT_VIOLATION
-
 #include <cstdint>
 #include <vector>
 #include <exception>
@@ -12,59 +9,14 @@
 #include <string>
 #include <cstring>
 
-#include <gsl/span>
-
-static_assert(sizeof(size_t) >= sizeof(uint32_t), "Cannot safely serialise");
-
+#include "c3/nu/data/span_deps.hpp"
 #include "c3/nu/data/helpers.hpp"
 #include "c3/nu/endian.hpp"
+#include "c3/nu/sfinae.hpp"
 
 namespace c3::nu {
   // Making this a char allows implicit upcasting
   constexpr uint8_t dynamic_size = 0;
-
-  template<class T, class U=
-    typename std::remove_cv<
-    typename std::remove_pointer<
-    typename std::remove_reference<
-    typename std::remove_extent<
-    T
-    >::type
-    >::type
-    >::type
-    >::type
-    > struct remove_all : remove_all<U> {};
-  template<class T> struct remove_all<T, T> { typedef T type; };
-
-  template<typename Test>
-  struct is_fixed_span : std::false_type {};
-
-  template<typename T, std::ptrdiff_t Len>
-  struct is_fixed_span<gsl::span<T, Len>> : std::true_type {};
-  template<typename T, std::ptrdiff_t Len>
-  struct is_fixed_span<gsl::span<const T, Len>> : std::true_type {};
-  template<typename T, std::ptrdiff_t Len>
-  struct is_fixed_span<gsl::span<volatile T, Len>> : std::true_type {};
-  template<typename T, std::ptrdiff_t Len>
-  struct is_fixed_span<gsl::span<const volatile T, Len>> : std::true_type {};
-
-  template<typename T>
-  constexpr bool is_fixed_span_v = is_fixed_span<T>::value;
-
-  template<typename Test>
-  struct is_array : std::false_type {};
-
-  template<typename T, size_t Len>
-  struct is_array<std::array<T, Len>> : std::true_type {};
-  template<typename T, size_t Len>
-  struct is_array<std::array<const T, Len>> : std::true_type {};
-  template<typename T, size_t Len>
-  struct is_array<std::array<volatile T, Len>> : std::true_type {};
-  template<typename T, size_t Len>
-  struct is_array<std::array<const volatile T, Len>> : std::true_type {};
-
-  template<typename T>
-  constexpr bool is_array_v = is_array<T>::value;
 
   using data = std::vector<uint8_t>;
   using data_ref = gsl::span<uint8_t>;
@@ -111,6 +63,7 @@ namespace c3::nu {
   template<typename T>
   constexpr size_t serialised_size();
 
+  /// XXX: does not strip qualifiers, as that would confuse parameter type
   template<typename T>
   data serialise(const T& t) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
@@ -124,6 +77,7 @@ namespace c3::nu {
 
   inline data serialise(data&& b) { return std::forward<data&&>(b); }
 
+  /// XXX: does not strip qualifiers, as that would confuse return type
   template<typename T>
   inline T deserialise(data_const_ref d) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
@@ -140,24 +94,29 @@ namespace c3::nu {
   template<typename T>
   class static_serialisable;
 
+  /// XXX: returns 0 if not statically serialisable
   template<typename T>
   constexpr size_t serialised_size() {
-    if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
+    if constexpr (!std::is_same_v<typename remove_all<T>::type, T>)
+      return serialised_size<typename remove_all<T>::type>();
+    else if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
       return T::_serialised_size;
     else if constexpr (is_fixed_span_v<T>)
       return serialised_size<typename T::value_type>() * T::extent;
     else if constexpr (is_array_v<T>)
       return serialised_size<typename T::value_type>() * std::tuple_size<T>::value;
-    else //if constexpr (std::is_enum_v<T>)
+    else if constexpr (std::is_enum_v<T>)
       return serialised_size<typename std::underlying_type<T>::type>();
+    else
+      return 0;
   }
 
   template<typename A, typename... StaticT>
   constexpr size_t total_serialised_size() {
     if constexpr (sizeof...(StaticT) == 0)
-      return serialised_size<typename remove_all<A>::type>();
+      return serialised_size<A>();
     else
-      return serialised_size<typename remove_all<A>::type>() + total_serialised_size<StaticT...>();
+      return serialised_size<A>() + total_serialised_size<StaticT...>();
   }
 
   template<typename A, typename... StaticT>
@@ -208,25 +167,17 @@ namespace c3::nu {
       serialise_all(output.subspan(1), tail...);
   }
 
-  template<typename Lval, typename Rval>
-  inline bool try_add(Lval& lv, Rval&& rv) {
-    if constexpr (std::numeric_limits<Rval>::digits > std::numeric_limits<Lval>::digits) {
-      if (static_cast<Rval>(lv) > static_cast<Rval>(std::numeric_limits<Lval>::max()) - rv)
-        return false;
-    }
-    else if constexpr (std::numeric_limits<Rval>::digits < std::numeric_limits<Lval>::digits) {
-      if (lv > std::numeric_limits<Lval>::max() - static_cast<Lval>(rv))
-        return false;
-    }
-    else {
-      if (lv > std::numeric_limits<Lval>::max() - rv)
-        return false;
-    }
 
-    lv += rv;
+  template<typename T, typename = void>
+  struct is_static_serialisable : std::false_type {};
 
-    return true;
-  }
+  template<typename T>
+  struct is_static_serialisable<T,
+      typename std::enable_if<
+        static_cast<bool>(serialised_size<T>())
+      >::type> : std::true_type {};
+  template<typename T>
+  constexpr bool is_static_serialisable_v = is_static_serialisable<T>::value;
 }
 
 #include "c3/nu/data/clean_helpers.hpp"
