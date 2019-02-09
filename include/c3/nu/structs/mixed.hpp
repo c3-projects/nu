@@ -32,7 +32,7 @@ namespace c3::nu {
   }
 
   template<typename SizeType, typename Head, typename... Tail>
-  inline data squash(Head head, Tail... tail) {
+  inline data squash(Head&& head, Tail... tail) {
     data ret;
     _squash_internal<SizeType>(ret, head, tail...);
     return ret;
