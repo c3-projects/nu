@@ -1,4 +1,4 @@
-//! A bunch of helper macros for implmenting serialisation
+//! A bunch of helper macros for implementing serialisation
 
 // We don't want this, as it does make sense for this to included multiple times
 // #pragma once
