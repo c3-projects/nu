@@ -1,6 +1,7 @@
 #pragma once
 
 #include "c3/nu/data.hpp"
+#include <c3/nu/int_maths.hpp>
 
 namespace c3::nu {
   template<typename SizeType, typename... Input>

@@ -78,6 +78,19 @@ namespace c3::nu {
   }
 
   template<>
+  constexpr size_t serialised_size<char>() { return 1; }
+  template<>
+  inline void serialise_static(const char& i, data_ref b) {
+    b[0] = static_cast<uint8_t>(i);
+  }
+  template<>
+  inline char deserialise(data_const_ref b){
+    if (b.size() != 1)
+      throw serialisation_failure("Invalid length");
+    else return static_cast<int8_t>(b[0]);
+  }
+
+  template<>
   inline data serialise(const data& b) { return b; }
   template<>
   inline data deserialise(data_const_ref b) { return data(b.begin(), b.end()); }

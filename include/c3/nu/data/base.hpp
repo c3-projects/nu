@@ -27,9 +27,7 @@ namespace c3::nu {
     typename std::remove_cv<
     typename std::remove_pointer<
     typename std::remove_reference<
-    typename std::remove_extent<
     T
-    >::type
     >::type
     >::type
     >::type
@@ -140,6 +138,7 @@ namespace c3::nu {
   template<typename T>
   class static_serialisable;
 
+  /// XXX: returns 0 if not statically serialisable
   template<typename T>
   constexpr size_t serialised_size() {
     if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
@@ -148,8 +147,10 @@ namespace c3::nu {
       return serialised_size<typename T::value_type>() * T::extent;
     else if constexpr (is_array_v<T>)
       return serialised_size<typename T::value_type>() * std::tuple_size<T>::value;
-    else //if constexpr (std::is_enum_v<T>)
+    else if constexpr (std::is_enum_v<T>)
       return serialised_size<typename std::underlying_type<T>::type>();
+    else
+      return 0;
   }
 
   template<typename A, typename... StaticT>
@@ -208,25 +209,17 @@ namespace c3::nu {
       serialise_all(output.subspan(1), tail...);
   }
 
-  template<typename Lval, typename Rval>
-  inline bool try_add(Lval& lv, Rval&& rv) {
-    if constexpr (std::numeric_limits<Rval>::digits > std::numeric_limits<Lval>::digits) {
-      if (static_cast<Rval>(lv) > static_cast<Rval>(std::numeric_limits<Lval>::max()) - rv)
-        return false;
-    }
-    else if constexpr (std::numeric_limits<Rval>::digits < std::numeric_limits<Lval>::digits) {
-      if (lv > std::numeric_limits<Lval>::max() - static_cast<Lval>(rv))
-        return false;
-    }
-    else {
-      if (lv > std::numeric_limits<Lval>::max() - rv)
-        return false;
-    }
 
-    lv += rv;
+  template<typename T, typename = void>
+  struct is_static_serialisable : std::false_type {};
 
-    return true;
-  }
+  template<typename T>
+  struct is_static_serialisable<T,
+      typename std::enable_if<
+        static_cast<bool>(serialised_size<T>())
+      >::type> : std::true_type {};
+  template<typename T>
+  constexpr bool is_static_serialisable_v = is_static_serialisable<T>::value;
 }
 
 #include "c3/nu/data/clean_helpers.hpp"
