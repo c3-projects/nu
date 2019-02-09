@@ -54,12 +54,14 @@ namespace c3::nu {
       if (!try_add(our_chunk_size, serialised_size<SizeType>()))
         throw serialisation_failure("Total size overflows size_t");
 
-      SizeType len_s = deserialise<SizeType>(b.subspan(0, serialised_size<SizeType>()));
-      if (!try_add(our_chunk_size, len_s))
-        throw serialisation_failure("Possibly fake total size overflows size_t");
-
-      // Subspan does a bounds check, so we don't have to
-      head = deserialise<Head>(b.subspan(serialised_size<SizeType>(), static_cast<size_t>(len_s)));
+      if constexpr (sizeof...(Tail) != 0) {
+        SizeType len_s = deserialise<SizeType>(b.subspan(0, serialised_size<SizeType>()));
+        if (!try_add(our_chunk_size, len_s))
+          throw serialisation_failure("Possibly fake total size overflows size_t");
+         head = deserialise<Head>(b.subspan(serialised_size<SizeType>(), static_cast<size_t>(len_s)));
+      }
+      else
+        head = deserialise<Head>(b);
     }
 
     // Subspan does a bounds check, so we don't have to
