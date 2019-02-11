@@ -41,7 +41,6 @@ namespace c3::nu {
 
 #undef C3_NU_SERIALISEABLE_INT
 
-  // These are needed in this header file
   template<>
   inline data serialise(const std::string& str) {
     return { str.begin(), str.end() };

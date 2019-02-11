@@ -79,11 +79,16 @@ namespace c3::nu {
 
   /// XXX: does not strip qualifiers, as that would confuse return type
   template<typename T>
-  inline T deserialise(data_const_ref d) {
+  inline T deserialise(data_const_ref b) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
-      return T::_deserialise(d);
+      return T::_deserialise(b);
+    else if (std::is_array_v<T>) {
+      T ret;
+      std::copy(b.begin(), b.end(), ret.begin());
+      return ret;
+    }
     else
-      return static_cast<T>(deserialise<typename std::underlying_type<T>::type>(d));
+      return static_cast<T>(deserialise<typename std::underlying_type<T>::type>(b));
   }
 
   template<typename T>
@@ -127,6 +132,8 @@ namespace c3::nu {
   void serialise_static(const T& t, data_ref d) {
     if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
       t._serialise_static(d);
+    else if constexpr (std::is_array_v<T>)
+        std::copy(t.begin(), t.end(), d.begin());
     else
       serialise_static(static_cast<typename std::underlying_type<T>::type>(t), d);
   }
