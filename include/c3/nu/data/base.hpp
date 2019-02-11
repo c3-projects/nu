@@ -77,28 +77,6 @@ namespace c3::nu {
 
   inline data serialise(data&& b) { return std::forward<data&&>(b); }
 
-  /// XXX: does not strip qualifiers, as that would confuse return type
-  template<typename T>
-  inline T deserialise(data_const_ref b) {
-    if constexpr (std::is_base_of_v<serialisable<T>, T>)
-      return T::_deserialise(b);
-    else if constexpr (is_static_serialisable_array_v<T>) {
-      T ret;
-      std::copy(b.begin(), b.end(), ret.begin());
-      return ret;
-    }
-    else
-      return static_cast<T>(deserialise<typename std::underlying_type<T>::type>(b));
-  }
-
-  template<typename T>
-  inline T deserialise(const uint8_t* d) {
-    return deserialise({d, serialised_size<T>()});
-  }
-
-  template<typename T>
-  class static_serialisable;
-
   template<typename T, typename = void>
   struct is_static_serialisable : std::false_type {};
 
@@ -120,7 +98,29 @@ namespace c3::nu {
         is_static_serialisable_v<typename T::value_type>
       >::type> : std::true_type {};
   template<typename T>
-  constexpr bool is_static_serialisable_array_v = is_static_serialisable<T>::value;
+  constexpr bool is_static_serialisable_array_v = is_static_serialisable_array<T>::value;
+
+  /// XXX: does not strip qualifiers, as that would confuse return type
+  template<typename T>
+  inline T deserialise(data_const_ref b) {
+    if constexpr (std::is_base_of_v<serialisable<T>, T>)
+      return T::_deserialise(b);
+    else if constexpr (is_static_serialisable_array_v<T>) {
+      T ret;
+      std::copy(b.begin(), b.end(), ret.begin());
+      return ret;
+    }
+    else
+      return static_cast<T>(deserialise<typename std::underlying_type<T>::type>(b));
+  }
+
+  template<typename T>
+  inline T deserialise(const uint8_t* d) {
+    return deserialise({d, serialised_size<T>()});
+  }
+
+  template<typename T>
+  class static_serialisable;
 
   /// XXX: returns 0 if not statically serialisable
   template<typename T>
