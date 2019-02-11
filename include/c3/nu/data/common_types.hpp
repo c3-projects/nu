@@ -102,17 +102,4 @@ namespace c3::nu {
   inline data serialise(const char* cstr) {
     return { cstr, cstr + ::strlen(cstr) };
   }
-
-  template<typename T, size_t Len>
-  inline std::array<T, Len> deserialise(data_const_ref b) {
-    if (static_cast<size_t>(b.size()) != serialised_size<std::array<T, Len>>())
-      throw serialisation_failure("Buffer size is different from expected value");
-
-    std::array<T, Len> ret;
-    for (auto& i : ret) {
-      i = deserialise<T>(b.subspan(0, serialised_size<T>()));
-      b = b.subspan(serialised_size<T>());
-    }
-    return ret;
-  }
 }
