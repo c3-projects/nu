@@ -82,7 +82,7 @@ namespace c3::nu {
   inline T deserialise(data_const_ref b) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
       return T::_deserialise(b);
-    else if constexpr (is_array_v<T>) {
+    else if constexpr (is_static_serialisable_array_v<T>) {
       T ret;
       std::copy(b.begin(), b.end(), ret.begin());
       return ret;
@@ -110,6 +110,18 @@ namespace c3::nu {
   template<typename T>
   constexpr bool is_static_serialisable_v = is_static_serialisable<T>::value;
 
+  template<typename T, typename = void>
+  struct is_static_serialisable_array : std::false_type {};
+
+  template<typename T>
+  struct is_static_serialisable_array<T,
+      typename std::enable_if<
+        is_array_v<T> &&
+        is_static_serialisable_v<typename T::value_type>
+      >::type> : std::true_type {};
+  template<typename T>
+  constexpr bool is_static_serialisable_array_v = is_static_serialisable<T>::value;
+
   /// XXX: returns 0 if not statically serialisable
   template<typename T>
   constexpr size_t serialised_size() {
@@ -119,7 +131,7 @@ namespace c3::nu {
       return T::_serialised_size;
     else if constexpr (is_fixed_span_v<T>)
       return serialised_size<typename T::value_type>() * T::extent;
-    else if constexpr (is_array_v<T> && is_static_serialisable_v<typename T::value_type>)
+    else if constexpr (is_static_serialisable_array_v<T>)
       return serialised_size<typename T::value_type>() * std::tuple_size<T>::value;
     else if constexpr (std::is_enum_v<T>)
       return serialised_size<typename std::underlying_type<T>::type>();
@@ -143,8 +155,8 @@ namespace c3::nu {
   void serialise_static(const T& t, data_ref d) {
     if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
       t._serialise_static(d);
-    else if constexpr (is_array_v<T>)
-        std::copy(t.begin(), t.end(), d.begin());
+    else if constexpr (is_static_serialisable_array_v<T>)
+      std::copy(t.begin(), t.end(), d.begin());
     else
       serialise_static(static_cast<typename std::underlying_type<T>::type>(t), d);
   }
