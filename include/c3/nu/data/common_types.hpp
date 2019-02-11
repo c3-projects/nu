@@ -104,14 +104,6 @@ namespace c3::nu {
   }
 
   template<typename T, size_t Len>
-  inline void serialise_static(std::array<T, Len> input, data_ref b) {
-    for (auto i : input) {
-      serialise_static(b.subspan(0, serialised_size<T>()));
-      b = b.subspan(serialised_size<T>());
-    }
-  }
-
-  template<typename T, size_t Len>
   inline std::array<T, Len> deserialise(data_const_ref b) {
     if (static_cast<size_t>(b.size()) != serialised_size<std::array<T, Len>>())
       throw serialisation_failure("Buffer size is different from expected value");
