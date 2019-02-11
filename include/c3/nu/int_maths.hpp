@@ -4,7 +4,7 @@
 
 namespace c3::nu {
   template<typename Lval, typename Rval>
-  inline bool try_add(Lval& lv, Rval&& rv) {
+  constexpr bool try_add(Lval& lv, Rval&& rv) {
     if constexpr (std::numeric_limits<Rval>::digits > std::numeric_limits<Lval>::digits) {
       if (static_cast<Rval>(lv) > static_cast<Rval>(std::numeric_limits<Lval>::max()) - rv)
         return false;
@@ -19,6 +19,20 @@ namespace c3::nu {
     }
 
     lv += rv;
+
+    return true;
+  }
+
+  template<typename To, typename From>
+  constexpr bool can_cast(From& n) {
+    if constexpr (std::numeric_limits<From>::digits > std::numeric_limits<To>::digits) {
+      if (n > static_cast<From>(std::numeric_limits<To>::max()))
+        return false;
+    }
+    else {
+      if (n > std::numeric_limits<To>::max())
+        return false;
+    }
 
     return true;
   }

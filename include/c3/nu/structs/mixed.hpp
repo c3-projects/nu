@@ -52,12 +52,12 @@ namespace c3::nu {
     }
     else {
       if (!try_add(our_chunk_size, serialised_size<SizeType>()))
-        throw serialisation_failure("Total size overflows size_t");
+        throw serialisation_failure("Element size overflows size_t");
 
       if constexpr (sizeof...(Tail) != 0) {
         SizeType len_s = deserialise<SizeType>(b.subspan(0, serialised_size<SizeType>()));
         if (!try_add(our_chunk_size, len_s))
-          throw serialisation_failure("Possibly fake total size overflows size_t");
+          throw serialisation_failure("Possibly fake element size overflows size_t");
          head = deserialise<Head>(b.subspan(serialised_size<SizeType>(), static_cast<size_t>(len_s)));
       }
       else

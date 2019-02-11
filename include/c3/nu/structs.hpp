@@ -2,3 +2,4 @@
 #include "c3/nu/structs/dynamic.hpp"
 #include "c3/nu/structs/hybrid.hpp"
 #include "c3/nu/structs/mixed.hpp"
+#include "c3/nu/structs/sequence.hpp"
