@@ -82,7 +82,7 @@ namespace c3::nu {
   inline T deserialise(data_const_ref b) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
       return T::_deserialise(b);
-    else if (std::is_array_v<T>) {
+    else if constexpr (is_array_v<T>) {
       T ret;
       std::copy(b.begin(), b.end(), ret.begin());
       return ret;
@@ -99,6 +99,17 @@ namespace c3::nu {
   template<typename T>
   class static_serialisable;
 
+  template<typename T, typename = void>
+  struct is_static_serialisable : std::false_type {};
+
+  template<typename T>
+  struct is_static_serialisable<T,
+      typename std::enable_if<
+        static_cast<bool>(serialised_size<T>())
+      >::type> : std::true_type {};
+  template<typename T>
+  constexpr bool is_static_serialisable_v = is_static_serialisable<T>::value;
+
   /// XXX: returns 0 if not statically serialisable
   template<typename T>
   constexpr size_t serialised_size() {
@@ -108,7 +119,7 @@ namespace c3::nu {
       return T::_serialised_size;
     else if constexpr (is_fixed_span_v<T>)
       return serialised_size<typename T::value_type>() * T::extent;
-    else if constexpr (is_array_v<T>)
+    else if constexpr (is_array_v<T> && is_static_serialisable_v<typename T::value_type>)
       return serialised_size<typename T::value_type>() * std::tuple_size<T>::value;
     else if constexpr (std::is_enum_v<T>)
       return serialised_size<typename std::underlying_type<T>::type>();
@@ -132,7 +143,7 @@ namespace c3::nu {
   void serialise_static(const T& t, data_ref d) {
     if constexpr (std::is_base_of_v<static_serialisable<T>, T>)
       t._serialise_static(d);
-    else if constexpr (std::is_array_v<T>)
+    else if constexpr (is_array_v<T>)
         std::copy(t.begin(), t.end(), d.begin());
     else
       serialise_static(static_cast<typename std::underlying_type<T>::type>(t), d);
@@ -173,18 +184,6 @@ namespace c3::nu {
     if constexpr (sizeof...(Tail) > 0)
       serialise_all(output.subspan(1), tail...);
   }
-
-
-  template<typename T, typename = void>
-  struct is_static_serialisable : std::false_type {};
-
-  template<typename T>
-  struct is_static_serialisable<T,
-      typename std::enable_if<
-        static_cast<bool>(serialised_size<T>())
-      >::type> : std::true_type {};
-  template<typename T>
-  constexpr bool is_static_serialisable_v = is_static_serialisable<T>::value;
 }
 
 #include "c3/nu/data/clean_helpers.hpp"
