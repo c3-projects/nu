@@ -10,6 +10,7 @@ int main() {
   c3::nu::cancellable_provider<uint64_t> provider_2;
   c3::nu::cancellable_provider<uint64_t> provider_3;
   c3::nu::cancellable_provider<uint64_t> provider_4;
+  c3::nu::cancellable_provider<std::unique_ptr<uint64_t>> provider_5;
 
   c3::nu::gateway_bool got_first_datum;
   c3::nu::gateway_bool got_second_datum;
@@ -31,6 +32,8 @@ int main() {
     provider_3_mapped.maybe_provide([]() { return "foobar"; });
 
     provider_4.provide(180);
+
+    provider_5.provide(std::make_unique<uint64_t>(10));
   }}.detach();
 
   auto consumer_0 = provider_0.get_cancellable();
@@ -38,43 +41,26 @@ int main() {
   auto consumer_2 = provider_2.get_cancellable();
   auto consumer_3 = provider_3.get_cancellable();
   auto consumer_4 = provider_4.get_cancellable();
+  auto consumer_5 = provider_5.get_cancellable();
 
-  if (consumer_0.try_get())
+  if (consumer_0.try_take())
     throw std::runtime_error("Early provision");
 
   if (consumer_0.wait(1s)) {
-    if (consumer_0.try_get() != 420)
+    if (consumer_0.try_take() != 420)
       throw std::runtime_error("Corrupted update");
   }
   else throw std::runtime_error("Failed to update");
 
   got_first_datum.open();
 
-  if (consumer_1.wait(1s)) {
-    if (consumer_1.try_get() != 69)
-      throw std::runtime_error("Corrupted provision");
-  }
-  else throw std::runtime_error("Failed to provide");
-
-  if (consumer_1.wait(1s)) {
-    if (consumer_1.try_get() != 69)
-      throw std::runtime_error("Corrupted second provision");
-  }
-  else throw std::runtime_error("Failed to get second provision");
-
   auto consumer_1_plus_1 = consumer_1.map<decltype(consumer_1)::provided_t>([](auto x) { return x + 1; });
-
-  if (consumer_1_plus_1.wait(20ms)) {
-    if (consumer_1_plus_1.try_get() != 70)
-      throw std::runtime_error("Corrupted mapped provision");
-  }
-  else throw std::runtime_error("Failed to get mapped consumer provision");
 
   if (consumer_1_plus_1.wait(20ms)) {
     if (consumer_1_plus_1.try_take() != 70)
       throw std::runtime_error("Corrupted mapped provision");
   }
-  else throw std::runtime_error("Failed to take mapped consumer provision");
+  else throw std::runtime_error("Failed to get mapped consumer provision");
 
   if (consumer_2.wait(20ms)) {
     throw std::runtime_error("Fake provision");
@@ -97,6 +83,11 @@ int main() {
   });
 
   consumed_4.wait_for_open();
+
+  consumer_5.take_on_complete([&](auto i) {
+    if (*i != 10)
+      throw std::runtime_error("Failed move unique_ptr provision");
+  });
 
   return 0;
 }

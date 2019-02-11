@@ -46,7 +46,6 @@ namespace c3::nu {
       virtual const gateway_bool& final_state_decided() const = 0;
       virtual gateway_bool& some_state_decided() = 0;
       virtual const gateway_bool& some_state_decided() const = 0;
-      virtual std::optional<T> get_value() const = 0;
       virtual std::optional<T> take_value() = 0;
       virtual void set_value(T&&) = 0;
       virtual bool has_value() const = 0;
@@ -118,18 +117,6 @@ namespace c3::nu {
 
     inline cancellable_state get_state() const { return shared_state->get_state(); }
 
-    /// Returns the result if it has been provided, otherwise returns std::nullopt
-    inline std::optional<T> try_get() {
-      if (shared_state->final_state_decided())
-        return shared_state->get_value();
-      else if (shared_state->some_state_decided()) {
-        shared_state->final_state_decided().open();
-        return shared_state->get_value();
-      }
-      else
-        return std::nullopt;
-    }
-
     /// Takes the result if it has been provided, otherwise returns std::nullopt
     inline std::optional<T> try_take() {
       if (shared_state->final_state_decided())
@@ -140,12 +127,6 @@ namespace c3::nu {
       }
       else
         return std::nullopt;
-    }
-
-    /// Returns the final result if it has been provided, otherwise returns std::nullopt
-    inline std::optional<T> try_get_final() {
-      if (shared_state->final_state_decided())
-        return shared_state->get_value();
     }
 
     /// Takes the final result if it has been provided, otherwise returns std::nullopt
@@ -228,9 +209,6 @@ namespace c3::nu {
     inline const gateway_bool& final_state_decided() const override { return _final_state_decided; }
     inline const gateway_bool& some_state_decided() const override { return _some_state_decided; }
     inline gateway_bool& some_state_decided() override { return _some_state_decided; }
-    inline std::optional<T> get_value() const override {
-      return result;
-    }
     inline std::optional<T> take_value() override {
       if (result) {
         std::optional<T> ret = std::move(*result);
@@ -258,12 +236,6 @@ namespace c3::nu {
     inline gateway_bool& some_state_decided() override { return base->some_state_decided(); }
     inline const gateway_bool& final_state_decided() const override { return base->final_state_decided(); }
     inline const gateway_bool& some_state_decided() const override { return base->some_state_decided(); }
-    inline std::optional<T> get_value() const override {
-      if (auto value = base->get_value())
-        return { mapper(*value) };
-      else
-        return std::nullopt;
-    }
     inline std::optional<T> take_value() override {
       if (auto value = base->take_value())
         return { mapper(*value) };
@@ -437,11 +409,8 @@ namespace c3::nu {
     inline gateway_bool& some_state_decided() override { return base->some_state_decided(); }
     inline const gateway_bool& final_state_decided() const override { return base->final_state_decided(); }
     inline const gateway_bool& some_state_decided() const override { return base->some_state_decided(); }
-    inline std::optional<T> get_value() const override {
-      throw std::logic_error("cancellable_provider<T>::mapped_state used to set value");
-    }
     inline std::optional<T> take_value() override {
-      throw std::logic_error("cancellable_provider<T>::mapped_state used to set value");
+      throw std::logic_error("cancellable_provider<T>::mapped_state used to take value");
     }
     inline void set_value(T&& value) override {
       base->set_value(mapper(value));
