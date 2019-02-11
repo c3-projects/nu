@@ -18,10 +18,11 @@ namespace c3::nu {
     }
     else {
       data buf = serialise(head);
-      if (buf.size() > std::numeric_limits<SizeType>::max()) {
-        throw serialisation_failure("SizeType was too small to hold a value");
-      }
       if constexpr (sizeof...(Tail) != 0) {
+        if (buf.size() > std::numeric_limits<SizeType>::max()) {
+          throw serialisation_failure("SizeType was too small to hold a value");
+        }
+
         SizeType len = static_cast<SizeType>(buf.size());
         auto current_len = acc.size();
         acc.resize(current_len + serialised_size<SizeType>());
