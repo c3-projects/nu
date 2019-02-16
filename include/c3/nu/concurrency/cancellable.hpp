@@ -36,6 +36,9 @@ namespace c3::nu {
   class cancellable {
     template<typename All>
     friend class cancellable_provider;
+
+    template<typename All>
+    friend class cancellable;
   public:
     using provided_t = T;
 
@@ -224,9 +227,9 @@ namespace c3::nu {
   };
 
   /// Acts both as a mapper for set, or a mapper for get
-  template<typename T>
   template<typename Base>
-  class cancellable<T>::mapped_state final : public cancellable<T>::shared_state_t {
+  template<typename T>
+  class cancellable<Base>::mapped_state final : public cancellable<T>::shared_state_t {
   private:
     std::shared_ptr<typename cancellable<Base>::shared_state_t> base;
     std::function<T(Base)> mapper;

@@ -11,6 +11,7 @@ int main() {
   c3::nu::cancellable_provider<uint64_t> provider_3;
   c3::nu::cancellable_provider<uint64_t> provider_4;
   c3::nu::cancellable_provider<std::unique_ptr<uint64_t>> provider_5;
+  c3::nu::cancellable_provider<std::unique_ptr<uint64_t>> provider_6;
 
   c3::nu::gateway_bool got_first_datum;
   c3::nu::gateway_bool got_second_datum;
@@ -34,6 +35,7 @@ int main() {
     provider_4.provide(180);
 
     provider_5.provide(std::make_unique<uint64_t>(10));
+    provider_5.provide(std::make_unique<uint64_t>(36));
   }}.detach();
 
   auto consumer_0 = provider_0.get_cancellable();
@@ -42,6 +44,7 @@ int main() {
   auto consumer_3 = provider_3.get_cancellable();
   auto consumer_4 = provider_4.get_cancellable();
   auto consumer_5 = provider_5.get_cancellable();
+  auto consumer_6 = provider_6.get_cancellable();
 
   if (consumer_0.try_take())
     throw std::runtime_error("Early provision");
@@ -86,6 +89,12 @@ int main() {
 
   consumer_5.take_on_complete([&](auto i) {
     if (*i != 10)
+      throw std::runtime_error("Failed move unique_ptr provision");
+  });
+
+  auto consumer_6_plus_1 = consumer_6.map<std::unique_ptr<uint32_t>>([](auto x) { return std::make_unique<uint32_t>(*x + 1); });
+  consumer_6_plus_1.take_on_complete([&](std::unique_ptr<uint32_t> i) {
+    if (*i != 37)
       throw std::runtime_error("Failed move unique_ptr provision");
   });
 
