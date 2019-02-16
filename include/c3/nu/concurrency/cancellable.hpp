@@ -238,7 +238,7 @@ namespace c3::nu {
     inline const gateway_bool& some_state_decided() const override { return base->some_state_decided(); }
     inline std::optional<T> take_value() override {
       if (auto value = base->take_value())
-        return { mapper(*value) };
+        return { mapper(*std::move(value)) };
       else
         return std::nullopt;
     }
