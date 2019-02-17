@@ -51,6 +51,7 @@ namespace c3::nu {
       virtual const gateway_bool& some_state_decided() const = 0;
       virtual std::optional<T> take_value() = 0;
       virtual void set_value(T&&) = 0;
+      virtual void modify_value(std::function<void(std::optional<T>&)>) = 0;
       virtual bool has_value() const = 0;
 
     public:
@@ -220,13 +221,16 @@ namespace c3::nu {
       }
       return {};
     }
+    inline void modify_value(std::function<void(std::optional<T>&)> func) override {
+      func(result);
+    }
     inline void set_value(T&& value) override {
       result = std::move(value);
     }
     inline bool has_value() const override { return result.has_value(); }
   };
 
-  /// Acts both as a mapper for set, or a mapper for get
+  /// Acts both as a mapper for set
   template<typename Base>
   template<typename T>
   class cancellable<Base>::mapped_state final : public cancellable<T>::shared_state_t {
@@ -248,6 +252,9 @@ namespace c3::nu {
     inline void set_value(T&&) override {
       throw std::logic_error("cancellable<T>::mapped_state used to set value");
     }
+    inline void modify_value(std::function<void(std::optional<T>&)>) override {
+      throw std::logic_error("cancellable<T>::mapped_state used to set value");
+    }
     inline bool has_value() const override { return base->has_value(); }
 
   public:
@@ -264,17 +271,18 @@ namespace c3::nu {
     class mapped_state;
 
   private:
-    std::shared_ptr<typename cancellable<T>::shared_state_t> shared_state;
+    std::shared_ptr<typename cancellable<T>::simple_state> shared_state;
 
   public:
+    /// Attempts to provide a value, but does not call func if a result is already set
+    ///
+    /// If the function throws an exception, the result is cancelled
     inline cancellable_state maybe_provide(std::function<std::optional<T>()> func) {
       cancellable_state ret;
 
       shared_state->final_state_decided().maybe_open([&] {
         try {
-          std::optional<T> result = func();
-
-          if (result) {
+          if (auto result = func()) {
             shared_state->set_value(std::move(*result));
             shared_state->some_state_decided().open();
             ret = cancellable_state::Provided;
@@ -301,16 +309,49 @@ namespace c3::nu {
     /// Similar to maybe_provide, but does not set the final state unless cancelled.
     ///
     /// If the function throws an exception, the result is cancelled
-    template<typename Func>
-    inline cancellable_state maybe_update(Func func) {
+    inline cancellable_state maybe_update(std::function<std::optional<T>()> func) {
       cancellable_state ret;
 
       shared_state->final_state_decided().maybe_open([&] {
         try {
-          std::optional<T> result = func();
-
-          if (result) {
+          if (auto result = func()) {
             shared_state->set_value(std::move(*result));
+            shared_state->some_state_decided().open();
+            ret = cancellable_state::PartiallyProvided;
+
+            return false;
+          }
+          else {
+            ret = cancellable_state::Undecided;
+            return false;
+          }
+        } catch(...) {
+          ret = cancellable_state::Cancelled;
+          shared_state->some_state_decided().open();
+          return true;
+        }
+      },
+      [&] {
+        ret = cancellable_state::AlreadyDecided;
+      });
+
+      return ret;
+    }
+
+    /// Similar to maybe_update, but func is passed the shared state
+    ///
+    /// If the function throws an exception, the result is cancelled
+    ///
+    /// Please note that for mapped cancellables, the value is taken and then replaced,
+    /// resulting in 2 copies
+    inline cancellable_state maybe_modify(std::function<void(std::optional<T>)> func) {
+      cancellable_state ret;
+
+      shared_state->final_state_decided().maybe_open([&] {
+        try {
+          shared_state->modify_value(std::move(func));
+
+          if (shared_state->has_value()) {
             shared_state->some_state_decided().open();
             ret = cancellable_state::PartiallyProvided;
 
@@ -383,13 +424,21 @@ namespace c3::nu {
     inline void cancel() { shared_state->final_state_decided().open(); }
 
     template<typename Ret>
-    inline cancellable_provider<Ret> map(std::function<T(Ret)> func) {
-      return {std::make_shared<mapped_state<Ret>>(shared_state, func)};
+    inline cancellable_provider<Ret> map(std::function<T(Ret)> map_from) {
+      return {std::make_shared<mapped_state<Ret>>(shared_state, map_from)};
+    }
+
+    template<typename Ret>
+    inline cancellable_provider<Ret> map(std::function<T(Ret)> map_from,
+                                         std::function<Ret(T)> map_to) {
+      return {std::make_shared<mapped_state<Ret>>(shared_state, map_from, map_to)};
     }
 
   public:
     template<typename Other>
-    operator cancellable_provider<Other>() { return map([](T t) { return Other{t}; }); }
+    operator cancellable_provider<Other>() {
+      return map([](Other o) { return T{o}; }, [](T t) { return Other{t}; });
+    }
 
   public:
     inline cancellable<T> get_cancellable() { return { shared_state }; }
@@ -397,30 +446,5 @@ namespace c3::nu {
   public:
     cancellable_provider() : shared_state{std::make_shared<typename cancellable<T>::simple_state>()} {}
     cancellable_provider(decltype(shared_state) shared_state) : shared_state{shared_state} {}
-  };
-
-  /// Acts both as a mapper for set, or a mapper for get
-  template<typename Base>
-  template<typename T>
-  class cancellable_provider<Base>::mapped_state final : public cancellable<T>::shared_state_t {
-  private:
-    std::shared_ptr<typename cancellable<Base>::shared_state_t> base;
-    std::function<Base(T)> mapper;
-
-  public:
-    inline gateway_bool& final_state_decided() override { return base->final_state_decided(); }
-    inline gateway_bool& some_state_decided() override { return base->some_state_decided(); }
-    inline const gateway_bool& final_state_decided() const override { return base->final_state_decided(); }
-    inline const gateway_bool& some_state_decided() const override { return base->some_state_decided(); }
-    inline std::optional<T> take_value() override {
-      throw std::logic_error("cancellable_provider<T>::mapped_state used to take value");
-    }
-    inline void set_value(T&& value) override {
-      base->set_value(mapper(value));
-    }
-    inline bool has_value() const override { return base->has_value(); }
-
-  public:
-    mapped_state(decltype(base) base, decltype(mapper) mapper) : base{base}, mapper{mapper} {}
   };
 }
