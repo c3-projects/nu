@@ -51,7 +51,6 @@ namespace c3::nu {
       virtual const gateway_bool& some_state_decided() const = 0;
       virtual std::optional<T> take_value() = 0;
       virtual void set_value(T&&) = 0;
-      virtual void modify_value(std::function<void(std::optional<T>&)>) = 0;
       virtual bool has_value() const = 0;
 
     public:
@@ -221,7 +220,7 @@ namespace c3::nu {
       }
       return {};
     }
-    inline void modify_value(std::function<void(std::optional<T>&)> func) override {
+    inline void modify_value(std::function<void(std::optional<T>&)> func) {
       func(result);
     }
     inline void set_value(T&& value) override {
@@ -250,9 +249,6 @@ namespace c3::nu {
         return std::nullopt;
     }
     inline void set_value(T&&) override {
-      throw std::logic_error("cancellable<T>::mapped_state used to set value");
-    }
-    inline void modify_value(std::function<void(std::optional<T>&)>) override {
       throw std::logic_error("cancellable<T>::mapped_state used to set value");
     }
     inline bool has_value() const override { return base->has_value(); }
