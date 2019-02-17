@@ -15,6 +15,7 @@ int main() {
 
   c3::nu::gateway_bool got_first_datum;
   c3::nu::gateway_bool got_second_datum;
+  c3::nu::gateway_bool provider_3_update_ensurer;
 
   std::thread{[&] {
     std::this_thread::yield();
@@ -29,8 +30,8 @@ int main() {
     if (!provider_2.is_cancelled())
       throw std::runtime_error("Failed to cancel!");
 
-    auto provider_3_mapped = provider_3.map<std::string>([](auto s) { return s.length(); });
-    provider_3_mapped.maybe_provide([]() { return "foobar"; });
+    provider_3.update(3);
+    provider_3.maybe_modify([](auto& i) { i.value() += 3; });
 
     provider_4.provide(180);
 
@@ -74,7 +75,7 @@ int main() {
 
   got_second_datum.open();
 
-  if (consumer_3.try_take(1s) != std::string("foobar").length())
+  if (consumer_3.try_take(1s) != 6)
     throw std::runtime_error("Failed mapped provision");
 
   c3::nu::gateway_bool consumed_4;

@@ -340,7 +340,7 @@ namespace c3::nu {
     ///
     /// Please note that for mapped cancellables, the value is taken and then replaced,
     /// resulting in 2 copies
-    inline cancellable_state maybe_modify(std::function<void(std::optional<T>)> func) {
+    inline cancellable_state maybe_modify(std::function<void(std::optional<T>&)> func) {
       cancellable_state ret;
 
       shared_state->final_state_decided().maybe_open([&] {
@@ -418,23 +418,6 @@ namespace c3::nu {
     inline cancellable_state get_state() const { return shared_state->get_state(); }
 
     inline void cancel() { shared_state->final_state_decided().open(); }
-
-    template<typename Ret>
-    inline cancellable_provider<Ret> map(std::function<T(Ret)> map_from) {
-      return {std::make_shared<mapped_state<Ret>>(shared_state, map_from)};
-    }
-
-    template<typename Ret>
-    inline cancellable_provider<Ret> map(std::function<T(Ret)> map_from,
-                                         std::function<Ret(T)> map_to) {
-      return {std::make_shared<mapped_state<Ret>>(shared_state, map_from, map_to)};
-    }
-
-  public:
-    template<typename Other>
-    operator cancellable_provider<Other>() {
-      return map([](Other o) { return T{o}; }, [](T t) { return Other{t}; });
-    }
 
   public:
     inline cancellable<T> get_cancellable() { return { shared_state }; }
