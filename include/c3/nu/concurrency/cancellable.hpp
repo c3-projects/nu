@@ -138,21 +138,9 @@ namespace c3::nu {
         return shared_state->take_value();
     }
 
-    /// Returns the result if it has been provided, otherwise returns std::nullopt
-    inline std::optional<T> try_get(timeout_t timeout) {
-      wait(timeout);
-      return try_get();
-    }
-
     /// Takes the result if it has been provided, otherwise returns std::nullopt
     inline std::optional<T> try_take(timeout_t timeout) {
       wait(timeout);
-      return try_take();
-    }
-
-    /// Returns the final result if it has been provided, otherwise returns std::nullopt
-    inline std::optional<T> try_get_final(timeout_t timeout) {
-      wait_final(timeout);
       return try_take();
     }
 
@@ -165,14 +153,6 @@ namespace c3::nu {
     template<typename Ret>
     inline cancellable<Ret> map(std::function<Ret(T)> func) {
       return {std::make_shared<mapped_state<Ret>>(shared_state, std::move(func))};
-    }
-
-    inline void get_on_complete(std::function<void(T)> func) {
-      std::thread([=, func{std::move(func)}]() {
-        wait_final();
-        if (auto x = try_get())
-          func(std::move(*x));
-      }).detach();
     }
 
     inline void take_on_complete(std::function<void(T)> func) {
