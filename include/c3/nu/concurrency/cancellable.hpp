@@ -156,11 +156,11 @@ namespace c3::nu {
       return {std::make_shared<mapped_state<Ret>>(shared_state, std::move(func))};
     }
 
-    inline void take_on_complete() {
+    inline std::optional<T> take_on_update() {
       wait();
       return try_take();
     }
-    inline void take_final_on_complete(std::function<void(T)> func) {
+    inline std::optional<T> take_on_final() {
       wait_final();
       return try_take();
     }

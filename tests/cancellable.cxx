@@ -83,30 +83,34 @@ int main() {
 
   c3::nu::gateway_bool consumed_4;
 
-  consumer_4.take_on_complete([&](auto i) {
-    if (i != 180)
+  if (auto i = consumer_4.take_on_final()) {
+    if (*i != 180)
       throw std::runtime_error("Failed take_on_complete provision");
     consumed_4.open();
-  });
+  }
+  else throw std::runtime_error("Could not take final for consumer_4");
 
   consumed_4.wait_for_open();
 
-  consumer_5.take_on_complete([&](auto i) {
-    if (*i != 10)
+  if (auto i = consumer_5.take_on_final()) {
+    if (**i != 10)
       throw std::runtime_error("Failed move unique_ptr provision");
-  });
+  }
+  else throw std::runtime_error("Could not take final for consumer_5");
 
   auto consumer_6_plus_1 = consumer_6.map<std::unique_ptr<uint32_t>>([](auto x) { return std::make_unique<uint32_t>(*x + 1); });
-  consumer_6_plus_1.take_on_complete([=](std::unique_ptr<uint32_t> i) {
-    if (*i != 37)
+  if (auto i = consumer_6_plus_1.take_on_final()) {
+    if (**i != 37)
       throw std::runtime_error("Failed move unique_ptr provision");
-  });
+  }
+  else throw std::runtime_error("Could not take final for consumer_6");
 
   consumer_7.finalise();
-  consumer_7.take_on_complete([&](auto i) {
+  if (auto i = consumer_7.take_on_final()) {
     if (i != 64)
       throw std::runtime_error("Failed external provision");
-  });
+  }
+  else throw std::runtime_error("Could not take final for consumer_7");
 
   return 0;
 }
