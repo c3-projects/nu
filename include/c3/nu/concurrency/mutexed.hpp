@@ -21,7 +21,7 @@ namespace c3::nu {
     class handle {
     public:
       using type = T;
-      using parent_t = moveable_ptr<mutexed<T>>;
+      using parent_t = moveable_ptr<mutexed>;
 
     private:
       parent_t _parent;
@@ -72,10 +72,11 @@ namespace c3::nu {
     T _value;
 
   public:
+    friend class handle_ro;
     class handle_ro {
     public:
       using type = T;
-      using parent_t = moveable_ptr<const mutexed<T>>;
+      using parent_t = moveable_ptr<const worm_mutexed>;
 
     private:
       parent_t _parent;
@@ -85,11 +86,11 @@ namespace c3::nu {
       constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
-      inline handle_ro() : _parent{nullptr} {}
-      inline handle_ro(const parent_t parent) : _parent{parent} {
+      inline handle_ro() : _parent{} {}
+      inline handle_ro(const worm_mutexed* parent) : _parent{parent} {
         _parent->_mutex.lock_shared();
       }
-      inline handle_ro(const parent_t parent, timeout_t timeout) : _parent{parent} {
+      inline handle_ro(const worm_mutexed* parent, timeout_t timeout) : _parent{parent} {
         if (!_parent->_mutex.try_lock_shared_for(timeout))
           throw timed_out{};
       }
@@ -111,7 +112,7 @@ namespace c3::nu {
     class handle_rw {
     public:
       using type = T;
-      using parent_t = moveable_ptr<mutexed<T>>;
+      using parent_t = moveable_ptr<worm_mutexed>;
 
     private:
       parent_t _parent;
@@ -124,10 +125,10 @@ namespace c3::nu {
 
     public:
       inline handle_rw() : _parent{nullptr} {}
-      inline handle_rw(parent_t parent) : _parent{parent} {
+      inline handle_rw(worm_mutexed* parent) : _parent{parent} {
         _parent->_mutex.lock();
       }
-      inline handle_rw(parent_t parent, timeout_t timeout) : _parent{parent} {
+      inline handle_rw(worm_mutexed* parent, timeout_t timeout) : _parent{parent} {
         if (!_parent->_mutex.try_lock_for(timeout))
           throw timed_out{};
       }

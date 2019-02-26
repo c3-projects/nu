@@ -12,6 +12,7 @@ namespace c3::nu {
   class moveable_ptr {
   public:
     using pointer = T*;
+    using const_pointer = const T*;
     using element_type = T;
 
   private:
@@ -21,10 +22,11 @@ namespace c3::nu {
     constexpr operator pointer&() { return ptr; }
     constexpr operator const pointer&() const { return ptr; }
     constexpr pointer operator->() { return ptr; }
-    constexpr const pointer operator->() const { return ptr; }
+    constexpr const_pointer operator->() const { return ptr; }
     constexpr element_type& operator*() { return *ptr; }
     constexpr const element_type& operator*() const { return *ptr; }
     constexpr pointer get() { return ptr; }
+    constexpr const_pointer get() const { return ptr; }
     constexpr pointer release() { auto ret = ptr; ptr = nullptr; return ret; }
     constexpr inline void swap(moveable_ptr& other) { std::swap(ptr, other.ptr); }
 
