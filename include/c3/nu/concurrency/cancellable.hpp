@@ -136,6 +136,7 @@ namespace c3::nu {
     inline std::optional<T> try_take_final() {
       if (shared_state->final_state_decided())
         return shared_state->take_value();
+      else return std::nullopt;
     }
 
     /// Takes the result if it has been provided, otherwise returns std::nullopt

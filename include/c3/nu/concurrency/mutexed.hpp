@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "c3/nu/concurrency/timeout.hpp"
+#include "c3/nu/moveable_ptr.hpp"
 
 #include <mutex>
 #include <shared_mutex>
@@ -9,42 +10,40 @@ namespace c3::nu {
   /// A mutex wrapper that restricts access to a single requester at a time
   template<typename T>
   class mutexed {
+  public:
+    using type = T;
+
   private:
     std::timed_mutex _mutex = {};
     T _value;
 
   public:
     class handle {
+    public:
+      using type = T;
+      using parent_t = moveable_ptr<mutexed<T>>;
+
     private:
-      mutexed<T>* _parent;
+      parent_t _parent;
 
     public:
-      T& operator* () { return _parent->_value; }
-      T* operator->() { return &_parent->_value; }
-      const T& operator* () const { return _parent->_value; }
-      const T* operator->() const { return &_parent->_value; }
+      constexpr T& operator* () { return _parent->_value; }
+      constexpr T* operator->() { return &_parent->_value; }
+      constexpr const T& operator* () const { return _parent->_value; }
+      constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
       inline handle() : _parent{nullptr} {}
-      inline handle(mutexed<T>* parent) : _parent{parent} {
+      inline handle(parent_t parent) : _parent{parent} {
         _parent->_mutex.lock();
       }
-      inline handle(mutexed<T>* parent, timeout_t timeout) : _parent{parent} {
+      inline handle(parent_t parent, timeout_t timeout) : _parent{parent} {
         if (!_parent->_mutex.try_lock_for(timeout))
           throw timed_out{};
       }
       inline ~handle() {
         if (_parent)
           _parent->_mutex.unlock();
-      }
-
-      inline handle(const handle&) = delete;
-      inline handle(handle&& other) : _parent{other} { other._parent = nullptr; }
-
-      inline handle& operator=(const handle&) = delete;
-      inline handle& operator=(handle&& other) {
-        _parent = other._parent;
-        other._parent = nullptr;
       }
     };
 
@@ -65,25 +64,32 @@ namespace c3::nu {
   /// A mutex wrapper that allows one writer or many readers concurrent access to a variable
   template<typename T>
   class worm_mutexed {
+  public:
+    using type = T;
+
   private:
     mutable std::shared_timed_mutex _mutex;
     T _value;
 
   public:
     class handle_ro {
+    public:
+      using type = T;
+      using parent_t = moveable_ptr<const mutexed<T>>;
+
     private:
-      const worm_mutexed<T>* _parent;
+      parent_t _parent;
 
     public:
-      const T& operator* () const { return _parent->_value; }
-      const T* operator->() const { return &_parent->_value; }
+      constexpr const T& operator* () const { return _parent->_value; }
+      constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
       inline handle_ro() : _parent{nullptr} {}
-      inline handle_ro(const worm_mutexed<T>* parent) : _parent{parent} {
+      inline handle_ro(const parent_t parent) : _parent{parent} {
         _parent->_mutex.lock_shared();
       }
-      inline handle_ro(const worm_mutexed<T>* parent, timeout_t timeout) : _parent{parent} {
+      inline handle_ro(const parent_t parent, timeout_t timeout) : _parent{parent} {
         if (!_parent->_mutex.try_lock_shared_for(timeout))
           throw timed_out{};
       }
@@ -103,36 +109,31 @@ namespace c3::nu {
     };
 
     class handle_rw {
+    public:
+      using type = T;
+      using parent_t = moveable_ptr<mutexed<T>>;
+
     private:
-      worm_mutexed<T>* _parent;
+      parent_t _parent;
 
     public:
-      T& operator* () { return _parent->_value; }
-      T* operator->() { return &_parent->_value; }
-      const T& operator* () const { return _parent->_value; }
-      const T* operator->() const { return &_parent->_value; }
+      constexpr T& operator* () { return _parent->_value; }
+      constexpr T* operator->() { return &_parent->_value; }
+      constexpr const T& operator* () const { return _parent->_value; }
+      constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
       inline handle_rw() : _parent{nullptr} {}
-      inline handle_rw(worm_mutexed<T>* parent) : _parent{parent} {
+      inline handle_rw(parent_t parent) : _parent{parent} {
         _parent->_mutex.lock();
       }
-      inline handle_rw(worm_mutexed<T>* parent, timeout_t timeout) : _parent{parent} {
+      inline handle_rw(parent_t parent, timeout_t timeout) : _parent{parent} {
         if (!_parent->_mutex.try_lock_for(timeout))
           throw timed_out{};
       }
       inline ~handle_rw() {
         if (_parent)
           _parent->_mutex.unlock();
-      }
-
-      inline handle_rw(const handle_ro&) = delete;
-      inline handle_rw(handle_rw&& other) : _parent{other} { other._parent = nullptr; }
-
-      inline handle_rw& operator=(const handle_rw&) = delete;
-      inline handle_rw& operator=(handle_rw&& other) {
-        _parent = other._parent;
-        other._parent = nullptr;
       }
     };
 
