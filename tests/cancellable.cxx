@@ -13,13 +13,13 @@ int main() {
   c3::nu::cancellable_provider<std::unique_ptr<uint64_t>> provider_5;
   c3::nu::cancellable_provider<std::unique_ptr<uint64_t>> provider_6;
 
+  c3::nu::gateway_bool ready_for_first_datum;
   c3::nu::gateway_bool got_first_datum;
   c3::nu::gateway_bool got_second_datum;
   c3::nu::gateway_bool provider_3_update_ensurer;
 
   std::thread{[&] {
-    std::this_thread::yield();
-    std::this_thread::sleep_for(200ms);
+    ready_for_first_datum.wait_for_open();
     provider_0.maybe_update([] { return 999; });
     provider_0.maybe_update([] { return 420; });
     got_first_datum.wait_for_open();
@@ -51,6 +51,8 @@ int main() {
   if (consumer_0.try_take())
     throw std::runtime_error("Early provision");
 
+  ready_for_first_datum.open();
+
   if (consumer_0.wait(1s)) {
     if (consumer_0.try_take() != 420)
       throw std::runtime_error("Corrupted update");
@@ -67,7 +69,7 @@ int main() {
   }
   else throw std::runtime_error("Failed to get mapped consumer provision");
 
-  if (consumer_2.wait(20ms)) {
+  if (consumer_2.wait(1ms)) {
     throw std::runtime_error("Fake provision");
   }
 
@@ -95,7 +97,7 @@ int main() {
   });
 
   auto consumer_6_plus_1 = consumer_6.map<std::unique_ptr<uint32_t>>([](auto x) { return std::make_unique<uint32_t>(*x + 1); });
-  consumer_6_plus_1.take_on_complete([&](std::unique_ptr<uint32_t> i) {
+  consumer_6_plus_1.take_on_complete([=](std::unique_ptr<uint32_t> i) {
     if (*i != 37)
       throw std::runtime_error("Failed move unique_ptr provision");
   });

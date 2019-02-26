@@ -156,12 +156,13 @@ namespace c3::nu {
       return {std::make_shared<mapped_state<Ret>>(shared_state, std::move(func))};
     }
 
-    inline void take_on_complete(std::function<void(T)> func) {
-      std::thread([=, func{std::move(func)}]() {
-        wait_final();
-        if (auto x = try_take())
-          func(std::move(*x));
-      }).detach();
+    inline void take_on_complete() {
+      wait();
+      return try_take();
+    }
+    inline void take_final_on_complete(std::function<void(T)> func) {
+      wait_final();
+      return try_take();
     }
 
   public:
