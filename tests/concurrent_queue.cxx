@@ -7,8 +7,16 @@ int main() {
   concurrent_queue<int> q;
 
   q.push(1);
-  q.pop();
+  if (q.pop().try_take_final().value() != 1)
+    throw std::runtime_error("First value corrupted");
 
-  q.push(1);
-  q.pop().wait_final(1s);
+  q.push(69);
+  q.push(420);
+  if (q.pop().try_take_final().value() != 69)
+    throw std::runtime_error("Second value corrupted");
+
+  if (q.pop().try_take_final().value() != 420)
+    throw std::runtime_error("Third value corrupted");
+
+  return 0;
 }
