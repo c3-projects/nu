@@ -8,7 +8,7 @@ namespace c3::nu {
   template<typename Key, typename Value>
   class concurrent_map {
   public:
-    using base_t = std::map<Key, std::shared_ptr<Value>>;
+    using base_t = std::map<Key, Value>;
     using key_t = Key;
     using value_t = Value;
     using iterator_t = typename base_t::iterator;
@@ -35,16 +35,16 @@ namespace c3::nu {
     };
     inline bool contains(const Key& key) const {
       auto handle = _base.get_ro();
-      auto iter = handle->exists(key);
-      return iter != handle->end;
+      auto iter = handle->find(key);
+      return iter != handle->end();
     }
     template<typename... Args>
     inline auto at(Args... args) const {
-      return _base.get_rw()->at(std::forward<Args>(args)...);
+      return _base.get_ro()->at(std::forward<Args>(args)...);
     }
 
     template<typename Arg>
-    inline auto operator[](Arg arg) const {
+    inline auto operator[](Arg arg) {
       return _base.get_rw()->operator[](std::forward<Arg>(arg));
     }
 

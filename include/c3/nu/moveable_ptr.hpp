@@ -29,8 +29,7 @@ namespace c3::nu {
     constexpr inline void swap(moveable_ptr& other) { std::swap(ptr, other.ptr); }
 
   public:
-    template<typename... Args>
-    constexpr moveable_ptr(Args... args) : ptr{std::forward<Args>(args)...} {}
+    constexpr moveable_ptr(pointer p) : ptr{p} {}
 
   public:
     constexpr moveable_ptr(const moveable_ptr&) = delete;

@@ -1,5 +1,3 @@
-#pragma once
-
 #include "c3/nu/concurrency/concurrent_map.hpp"
 
 using namespace c3::nu;
@@ -10,7 +8,7 @@ int main() {
   m.emplace(0, "Foo");
   m[1] = "Bar";
 
-  if (m.at(0) != "Foo")
+  if (m.at(0) != std::string{"Foo"})
     throw std::runtime_error("First failed");
 
   if (!m.contains(1))

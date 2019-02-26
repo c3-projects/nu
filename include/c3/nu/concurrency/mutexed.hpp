@@ -27,10 +27,10 @@ namespace c3::nu {
       parent_t _parent;
 
     public:
-      T& operator* () { return _parent->_value; }
-      T* operator->() { return &_parent->_value; }
-      const T& operator* () const { return _parent->_value; }
-      const T* operator->() const { return &_parent->_value; }
+      constexpr T& operator* () { return _parent->_value; }
+      constexpr T* operator->() { return &_parent->_value; }
+      constexpr const T& operator* () const { return _parent->_value; }
+      constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
       inline handle() : _parent{nullptr} {}
@@ -75,14 +75,14 @@ namespace c3::nu {
     class handle_ro {
     public:
       using type = T;
-      using parent_t = moveable_ptr<mutexed<T>>;
+      using parent_t = moveable_ptr<const mutexed<T>>;
 
     private:
-      const parent_t _parent;
+      parent_t _parent;
 
     public:
-      const T& operator* () const { return _parent->_value; }
-      const T* operator->() const { return &_parent->_value; }
+      constexpr const T& operator* () const { return _parent->_value; }
+      constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
       inline handle_ro() : _parent{nullptr} {}
@@ -117,10 +117,10 @@ namespace c3::nu {
       parent_t _parent;
 
     public:
-      T& operator* () { return _parent->_value; }
-      T* operator->() { return &_parent->_value; }
-      const T& operator* () const { return _parent->_value; }
-      const T* operator->() const { return &_parent->_value; }
+      constexpr T& operator* () { return _parent->_value; }
+      constexpr T* operator->() { return &_parent->_value; }
+      constexpr const T& operator* () const { return _parent->_value; }
+      constexpr const T* operator->() const { return &_parent->_value; }
 
     public:
       inline handle_rw() : _parent{nullptr} {}
