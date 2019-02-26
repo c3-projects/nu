@@ -36,7 +36,7 @@ int main() {
     provider_4.provide(180);
 
     provider_5.provide(std::make_unique<uint64_t>(10));
-    provider_5.provide(std::make_unique<uint64_t>(36));
+    provider_6.provide(std::make_unique<uint64_t>(36));
   }}.detach();
 
   auto consumer_0 = provider_0.get_cancellable();
@@ -46,6 +46,7 @@ int main() {
   auto consumer_4 = provider_4.get_cancellable();
   auto consumer_5 = provider_5.get_cancellable();
   auto consumer_6 = provider_6.get_cancellable();
+  auto consumer_7 = c3::nu::cancellable<uint64_t>::external([]() { return 64; });
 
   if (consumer_0.try_take())
     throw std::runtime_error("Early provision");
@@ -97,6 +98,12 @@ int main() {
   consumer_6_plus_1.take_on_complete([&](std::unique_ptr<uint32_t> i) {
     if (*i != 37)
       throw std::runtime_error("Failed move unique_ptr provision");
+  });
+
+  consumer_7.finalise();
+  consumer_7.take_on_complete([&](auto i) {
+    if (i != 64)
+      throw std::runtime_error("Failed external provision");
   });
 
   return 0;

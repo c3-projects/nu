@@ -72,7 +72,7 @@ namespace c3::nu {
     class simple_state;
     template<typename Base>
     class mapped_state;
-    class predetermined_state;
+    class external_state;
 
   protected:
     std::shared_ptr<shared_state_t> shared_state;
@@ -184,6 +184,16 @@ namespace c3::nu {
     }
 
   public:
+    static cancellable<T> external(std::function<std::optional<T>()> get_state,
+                                   std::function<bool()> is_working) {
+      return { std::make_shared<external_state>(get_state, is_working) };
+    }
+
+    static cancellable<T> external(std::function<std::optional<T>()> get_state) {
+      return { std::make_shared<external_state>(get_state) };
+    }
+
+  public:
     template<typename Other>
     operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
 
@@ -254,7 +264,39 @@ namespace c3::nu {
     inline bool has_value() const override { return base->has_value(); }
 
   public:
-    mapped_state(decltype(base) base, decltype(mapper) mapper) : base{base}, mapper{mapper} {}
+    inline mapped_state(decltype(base) base, decltype(mapper) mapper) : base{base}, mapper{mapper} {}
+  };
+
+  /// Acts both as a mapper for set
+  template<typename T>
+  class cancellable<T>::external_state final : public cancellable<T>::shared_state_t {
+  private:
+    std::function<std::optional<T>()> get_state;
+    std::function<bool()> is_working;
+
+    gateway_bool _final_state_decided;
+    gateway_bool _some_state_decided = true;
+
+  public:
+    static inline bool _always_working() { return true; }
+
+  public:
+    inline gateway_bool& final_state_decided() override { return _final_state_decided; }
+    inline gateway_bool& some_state_decided() override { return _some_state_decided; }
+    inline const gateway_bool& final_state_decided() const override { return _final_state_decided; }
+    inline const gateway_bool& some_state_decided() const override { return _some_state_decided; }
+    inline std::optional<T> take_value() override {
+        return get_state();
+    }
+    inline void set_value(T&&) override {
+      throw std::logic_error("cancellable<T>::mapped_state used to set value");
+    }
+    inline bool has_value() const override { return is_working(); }
+
+  public:
+    inline external_state(decltype(get_state) get_state,
+                          decltype(is_working) is_working = _always_working) :
+      get_state{get_state}, is_working{is_working} {}
   };
 
   template<typename T>
@@ -418,6 +460,8 @@ namespace c3::nu {
     inline cancellable_state get_state() const { return shared_state->get_state(); }
 
     inline void cancel() { shared_state->final_state_decided().open(); }
+
+    inline void finalise() { shared_state->final_state_decided().open(); }
 
   public:
     inline cancellable<T> get_cancellable() { return { shared_state }; }
