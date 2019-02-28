@@ -10,13 +10,6 @@ namespace c3::nu {
   template<typename T>
   class letterbox;
 
-  template<typename T>
-  class _postbox_manager {
-  public:
-    _postbox_manager(const _postbox_manager&) = delete;
-    _postbox_manager& operator=(const _postbox_manager&) = delete;
-  };
-
   template<typename Id, typename Value>
   class postbox {
     //friend class letterbox<Value>;

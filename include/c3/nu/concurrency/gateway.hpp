@@ -11,7 +11,7 @@ namespace c3::nu {
   class gateway_bool {
   private:
     // Since we use mutexes, we do not need this to be atmic
-    bool _value = false;
+    std::atomic<bool> _value = false;
     std::mutex _mutex;
     std::condition_variable _on_open;
 
