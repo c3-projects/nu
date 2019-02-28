@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "c3/nu/data.hpp"
-#include "c3/nu/int_maths.hpp"
 
 namespace c3::nu {
   class biguint {
