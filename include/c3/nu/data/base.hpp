@@ -12,7 +12,7 @@
 #include "c3/nu/data/span_deps.hpp"
 #include "c3/nu/data/helpers.hpp"
 #include "c3/nu/endian.hpp"
-#include "c3/nu/sfinae.hpp"
+#include "c3/nu/types.hpp"
 
 namespace c3::nu {
   // Making this a char allows implicit upcasting

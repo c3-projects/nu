@@ -1,6 +1,8 @@
 #pragma once
 
 #include <type_traits>
+#include <any>
+#include <optional>
 
 #include "c3/nu/data/span_deps.hpp"
 
@@ -45,4 +47,13 @@ namespace c3::nu {
 
   template<typename T>
   constexpr bool is_array_v = is_array<T>::value;
+
+  template<typename Base, typename Derived>
+  inline std::optional<Base> try_any_move_cast(std::any&& a) {
+    try {
+      std::any_cast<Base>(std::move(a));
+    } catch (std::bad_any_cast) {
+      return std::nullopt;
+    }
+  }
 }
