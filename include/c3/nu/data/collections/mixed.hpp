@@ -6,9 +6,9 @@
 namespace c3::nu {
   using default_size_type = uint32_t;
   /// Used to enforce hybrid/static serialisation
-  using hybrid_struct = void;
+  using hybrid_collection = void;
 
-  template<typename SizeType = hybrid_struct, typename Head, typename... Tail>
+  template<typename SizeType = hybrid_collection, typename Head, typename... Tail>
   inline void _squash_internal(data& acc, Head&& head, Tail&&... tail) {
     if constexpr (is_static_serialisable_v<Head>) {
       auto current_len = acc.size();
@@ -36,14 +36,14 @@ namespace c3::nu {
       _squash_internal<SizeType>(acc, tail...);
   }
 
-  template<typename SizeType = hybrid_struct, typename Head, typename... Tail>
+  template<typename SizeType = hybrid_collection, typename Head, typename... Tail>
   inline data squash(Head&& head, Tail... tail) {
     data ret;
     _squash_internal<SizeType>(ret, head, tail...);
     return ret;
   }
 
-  template<typename SizeType = hybrid_struct, typename Head, typename... Tail>
+  template<typename SizeType = hybrid_collection, typename Head, typename... Tail>
   inline void expand(data_const_ref b, Head& head, Tail&... tail) {
     // We do use this, but only sometimes
     size_t our_chunk_size = 0;
