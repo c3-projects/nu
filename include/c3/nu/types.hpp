@@ -48,10 +48,18 @@ namespace c3::nu {
   template<typename T>
   constexpr bool is_array_v = is_array<T>::value;
 
-  template<typename Base, typename Derived>
+  template<typename Base>
   inline std::optional<Base> try_any_move_cast(std::any&& a) {
     try {
       std::any_cast<Base>(std::move(a));
+    } catch (std::bad_any_cast) {
+      return std::nullopt;
+    }
+  }
+  template<typename Base>
+  inline std::optional<Base> try_any_cast(const std::any& a) {
+    try {
+      return std::any_cast<Base>(a);
     } catch (std::bad_any_cast) {
       return std::nullopt;
     }

@@ -7,56 +7,16 @@
 #include <variant>
 
 #include "c3/nu/data.hpp"
+#include "c3/nu/bigint.hpp"
 
 namespace c3::nu {
-  /*
-  //TODO iterator
-  class data_struct {
-  public:
-    virtual data_struct& add_or_get_child(std::string&& name) = 0;
-    virtual data_struct& add_or_insert_child(std::string&& name) = 0;
-    virtual bool remove_child(std::string&& name) = 0;
-    /// Throws std::out_of_range if the child is not found
-    virtual data_struct& get_child(std::string&& name) = 0;
-    /// Returns false if old_name does not refer to an existing child
-    ///
-    /// XXX: overwrites any child with new_name
-    virtual bool rename_child(std::string&& old_name, std::string&& new_name) = 0;
-
-  public:
-    virtual std::any& get_value() = 0;
-    virtual void set_value(std::any&&) = 0;
-
-  public:
-    virtual bool can_be_value() const;
-    virtual bool can_be_parent() const;
-
-  public:
-    template<typename T>
-    data_struct& operator=(T&& t) {
-      if (can_be_parent()) {
-        // somehow take children with iter
-        throw std::runtime_error("Parent child steal not implemented");
-        return *this;
-      }
-      else {
-        return set_value(std::move(t));
-      }
-    }
-
-  public:
-    data_struct& operator[](std::string&& name) { return add_or_get_child(std::move(name)); }
-
-  public:
-    virtual ~data_struct() = default;
-  };
-
-  */
   class data_struct {
   private:
     using parent_t = std::map<std::string, data_struct>;
-    using value_t = std::any;
+  public:
+    using value_t = std::variant<std::monostate, nu::bigint, std::string, std::vector<data_struct>>;
 
+  private:
     std::variant<std::monostate, parent_t, value_t> _impl;
 
   public:
@@ -76,7 +36,7 @@ namespace c3::nu {
   private:
     template<typename T>
     T& get_impl() {
-      if (std::holds_alternative<std::monostate>(_impl) == 0)
+      if (std::holds_alternative<std::monostate>(_impl))
         return _impl.emplace<T>();
       else
         return std::get<T>(_impl);
@@ -124,17 +84,30 @@ namespace c3::nu {
     inline parent_t::const_iterator cend() const { return std::get<parent_t>(_impl).cend(); }
 
   public:
-    inline std::any& get_or_create_value() {
+    inline value_t& get_or_create_value() {
       return get_impl<value_t>();
     }
-    inline std::any& get_value() {
+    inline value_t& get_value() {
       return std::get<value_t>(_impl);
     }
-    inline const std::any& get_value() const {
+    inline const value_t& get_value() const {
       return std::get<value_t>(_impl);
     }
-    inline void set_value(std::any&& a) {
+    inline void set_value() {
+      get_impl<value_t>() = value_t();
+    }
+    inline void set_value(std::string str) {
+      get_impl<value_t>() = std::move(str);
+    }
+    inline void set_value(bigint a) {
       get_impl<value_t>() = a;
+    }
+    inline void set_value(std::vector<data_struct> ds) {
+      get_impl<value_t>() = ds;
+    }
+    template<typename Iter>
+    inline void set_value(Iter begin, Iter end) {
+      get_impl<value_t>() = std::vector<data_struct>(begin, end);
     }
 
   public:
