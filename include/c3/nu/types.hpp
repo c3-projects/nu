@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <any>
 #include <optional>
+#include <variant>
 
 #include "c3/nu/data/span_deps.hpp"
 
