@@ -74,16 +74,36 @@ namespace c3::nu {
       clean();
     }
 
+    inline bigint _div_op(const bigint& other) {
+      _sign = (_sign == other._sign);
+
+      if (other > *this) {
+        auto remainder = std::move(*this);
+        *this = 0;
+        return remainder;
+      }
+
+      bigint remainder = 0;
+
+
+
+      return remainder;
+    }
+
   public:
     template<typename T>
     constexpr bool can_convert() const noexcept {
       return serialised_size<T>() >= _data.size();
     }
 
+  private:
     inline void clean() {
       while (_data.size() > 0 && _data.back() == 0)
         _data.pop_back();
     }
+
+  public:
+    constexpr bool is_zero() const noexcept { return _data.empty(); }
 
   public:
     inline bigint& operator+=(const bigint& other) {
@@ -143,6 +163,22 @@ namespace c3::nu {
     inline bool operator==(const bigint& other) const { return _data == other._data; }
 
   public:
+    /// Base MUST be below 16, or you will incur UB
+    std::string to_string(int base = 16) {
+      auto cpy = *this;
+      std::string ret;
+
+      bigint current_base = base;
+
+      while (!cpy.is_zero()) {
+        ret.push_back("0123456789ABCDEF"[cpy.mod_divide(current_base)]);
+        current_base += base;
+      }
+
+      return {ret.rbegin(), ret.rend()};
+    }
+
+  public:
     template<typename T, typename = typename std::is_integral<T>::type>
     inline explicit operator T() const {
       if (!can_convert<T>())
@@ -156,6 +192,16 @@ namespace c3::nu {
         ret = -ret;
 
       return ret;
+    }
+
+    inline explicit operator std::string() const {
+      auto cpy = *this;
+      std::string ret;
+
+      auto i = 10;
+
+      while (!cpy.is_zero())
+        ret.emplace_backcpy.mod_divide
     }
 
   public:
@@ -173,7 +219,6 @@ namespace c3::nu {
       clean();
     }
   };
-
 
   template<>
   constexpr bool bigint::can_convert<float>() const noexcept {
