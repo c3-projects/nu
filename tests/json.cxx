@@ -5,7 +5,7 @@
 using namespace c3::nu;
 
 int main() {
-  data_struct ds;
+  obj_struct ds;
   ds["foo"] = "bar";
   ds["qux"]["quux"] = "baz";
 

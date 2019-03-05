@@ -22,7 +22,7 @@ namespace c3::nu {
     }
   }
 
-  inline void _json_encode_impl(const data_struct& ds, std::string& acc) {
+  inline void _json_encode_impl(const obj_struct& ds, std::string& acc) {
     if (ds.is_parent()) {
       acc.push_back('{');
       auto iter = ds.begin();
@@ -42,7 +42,7 @@ namespace c3::nu {
       acc += json_encode_datum(ds.get_value());
     }
   }
-  inline std::string json_encode(const data_struct& ds) {
+  inline std::string json_encode(const obj_struct& ds) {
     std::string ret;
     _json_encode_impl(ds, ret);
     return ret;
