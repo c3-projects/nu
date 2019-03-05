@@ -74,18 +74,27 @@ namespace c3::nu {
       clean();
     }
 
-    inline bigint _div_op(const bigint& other) {
+    inline bigint _mul_op(const bigint& other) {
+      throw std::runtime_error("_mul_op not implemented");
       _sign = (_sign == other._sign);
 
+      auto operand = *this;
+
+      *this = 0;
+
+      return remainder;
+    }
+
+    inline bigint _div_op(const bigint& other) {
+      _sign = (_sign == other._sign);
       if (other > *this) {
         auto remainder = std::move(*this);
         *this = 0;
         return remainder;
       }
+      throw std::runtime_error("_div_op not implemented");
 
       bigint remainder = 0;
-
-
 
       return remainder;
     }
@@ -106,6 +115,11 @@ namespace c3::nu {
     constexpr bool is_zero() const noexcept { return _data.empty(); }
 
   public:
+    inline bigint mod_divide(const bigint& other) {
+      return _div_op(other);
+    }
+
+  public:
     inline bigint& operator+=(const bigint& other) {
       if (other._sign == _sign)
         _add_op(other);
@@ -114,13 +128,20 @@ namespace c3::nu {
 
       return *this;
     }
-
     inline bigint& operator-=(const bigint& other) {
       if (other._sign != _sign)
         _add_op(other);
       else
         _sub_op(other);
 
+      return *this;
+    }
+    inline bigint& operator*=(const bigint& other) {
+      _mul_op(other);
+      return *this;
+    }
+    inline bigint& operator/=(const bigint& other) {
+      _div_op(other);
       return *this;
     }
 
@@ -132,6 +153,16 @@ namespace c3::nu {
     inline bigint operator-(bigint other) const {
       bigint clone = *this;
       clone -= other;
+      return clone;
+    }
+    inline bigint operator*(bigint other) const {
+      bigint clone = *this;
+      clone *= other;
+      return clone;
+    }
+    inline bigint operator/(bigint other) const {
+      bigint clone = *this;
+      clone /= other;
       return clone;
     }
 
@@ -163,15 +194,16 @@ namespace c3::nu {
     inline bool operator==(const bigint& other) const { return _data == other._data; }
 
   public:
-    /// Base MUST be below 16, or you will incur UB
-    std::string to_string(int base = 16) {
+    /// Base MUST be <= 38, or you will incur UB
+    std::string to_string(int base = 10) const {
+      static const char digits[37] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       auto cpy = *this;
       std::string ret;
 
       bigint current_base = base;
 
       while (!cpy.is_zero()) {
-        ret.push_back("0123456789ABCDEF"[cpy.mod_divide(current_base)]);
+        ret.push_back(digits[static_cast<int>(cpy.mod_divide(current_base))]);
         current_base += base;
       }
 
@@ -195,13 +227,7 @@ namespace c3::nu {
     }
 
     inline explicit operator std::string() const {
-      auto cpy = *this;
-      std::string ret;
-
-      auto i = 10;
-
-      while (!cpy.is_zero())
-        ret.emplace_backcpy.mod_divide
+      return to_string(10);
     }
 
   public:
