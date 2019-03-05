@@ -46,13 +46,13 @@ namespace c3::nu {
     }
 
   public:
-    inline obj_struct& get_or_add_child(std::string&& name) {
+    inline obj_struct& get_or_add_child(const std::string& name) {
       return get_impl<parent_t>().emplace(name, obj_struct()).first->second;
     }
-    inline bool remove_child(std::string&& name) {
+    inline bool remove_child(const std::string& name) {
       return get_impl<parent_t>().erase(name) != 0;
     }
-    inline obj_struct& get_child(std::string&& name) const {
+    inline obj_struct& get_child(const std::string& name) const {
       return std::visit([&](auto& x) -> obj_struct& {
         // If it is not a parent, then there is no chance of finding it,
         // even if it is monostate
@@ -61,7 +61,7 @@ namespace c3::nu {
         else throw std::out_of_range("get_child called on incorrect node type");
       }, _impl);
     }
-    inline bool rename_child(std::string&& old_name, std::string&& new_name) {
+    inline bool rename_child(const std::string& old_name, const std::string& new_name) {
       parent_t& m = get_impl<parent_t>();
 
       auto n = m.extract(old_name);
@@ -70,10 +70,10 @@ namespace c3::nu {
 
       return true;
     }
-    inline obj_struct steal_child(std::string&& name) {
+    inline obj_struct steal_child(const std::string& name) {
       return get_impl<parent_t>().extract(name).mapped();
     }
-    inline obj_struct& emplace_child(std::string&& name, obj_struct&& child) {
+    inline obj_struct& emplace_child(const std::string& name, obj_struct&& child) {
       return get_impl<parent_t>().emplace(name, child).first->second;
     }
     inline parent_t::iterator begin() { return std::get<parent_t>(_impl).begin(); }
@@ -97,39 +97,36 @@ namespace c3::nu {
       get_impl<value_t>() = value_t();
     }
     inline void set_value(std::string str) {
-      get_impl<value_t>() = std::move(str);
-    }
-    inline void set_value(const char* cstr) {
-      set_value(std::string{cstr});
+      get_impl<value_t>().emplace<std::string>(std::move(str));
     }
     inline void set_value(bigint a) {
-      get_impl<value_t>() = a;
+      get_impl<value_t>().emplace<bigint>(std::move(a));
     }
     inline void set_value(std::vector<obj_struct> ds) {
-      get_impl<value_t>() = ds;
+      get_impl<value_t>().emplace<std::vector<obj_struct>>(ds);
     }
     template<typename Iter>
     inline void set_value(Iter begin, Iter end) {
-      get_impl<value_t>() = std::vector<obj_struct>(begin, end);
+      get_impl<value_t>().emplace<std::vector<obj_struct>>(begin, end);
     }
 
   public:
-    obj_struct& operator[](std::string&& name) { return get_or_add_child(std::move(name)); }
+    obj_struct& operator[](const std::string& name) { return get_or_add_child(std::move(name)); }
 
   public:
     template<typename T>
-    obj_struct& operator=(T&& t) { set_value(std::forward<T&&>(t)); return *this; }
-  };
+    inline obj_struct& operator=(T&& t) {
+      if constexpr (std::is_same_v<typename remove_all<T>::type, obj_struct>) {
+        if constexpr (std::is_lvalue_reference_v<T>)
+          _impl = t._impl;
+        else
+          _impl = std::move(t._impl);
+      }
+      else
+        set_value(std::forward<T&&>(t));
 
-  template<>
-  obj_struct& obj_struct::operator=(obj_struct&& other) {
-    _impl = std::move(other._impl);
-    return *this;
-  };
-  template<>
-  obj_struct& obj_struct::operator=(const obj_struct& other) {
-    _impl = other._impl;
-    return *this;
+      return *this;
+    }
   };
 
   class markup_struct {
@@ -167,13 +164,13 @@ namespace c3::nu {
     }
 
   public:
-    inline markup_struct& add_or_get_child(std::string&& name) {
-      return get_impl<parent_t>().emplace(name, obj_struct())->second;
+    inline markup_struct& add_or_get_child(const std::string& name) {
+      return get_impl<parent_t>().emplace(name, markup_struct())->second;
     }
-    inline size_t remove_children(std::string&& name) {
+    inline size_t remove_children(const std::string& name) {
       return get_impl<parent_t>().erase(name);
     }
-    inline std::pair<parent_t::iterator, parent_t::iterator> get_children(std::string&& name) {
+    inline std::pair<parent_t::iterator, parent_t::iterator> get_children(const std::string& name) {
       return std::visit([&](auto& x) -> std::pair<parent_t::iterator, parent_t::iterator> {
         // If it is not a parent, then there is no chance of finding it,
         // even if it is monostate
@@ -182,7 +179,7 @@ namespace c3::nu {
         else throw std::out_of_range("get_child called on incorrect node type");
       }, _impl);
     }
-    inline std::pair<parent_t::const_iterator, parent_t::const_iterator> get_children(std::string&& name) const {
+    inline std::pair<parent_t::const_iterator, parent_t::const_iterator> get_children(const std::string& name) const {
       return std::visit([&](auto& x) -> std::pair<parent_t::const_iterator, parent_t::const_iterator> {
         // If it is not a parent, then there is no chance of finding it,
         // even if it is monostate
@@ -191,10 +188,10 @@ namespace c3::nu {
         else throw std::out_of_range("get_child called on incorrect node type");
       }, _impl);
     }
-    inline markup_struct steal_first_child(std::string&& name) {
+    inline markup_struct steal_first_child(const std::string& name) {
       return get_impl<parent_t>().extract(name).mapped();
     }
-    inline markup_struct& emplace_child(std::string&& name, markup_struct&& child) {
+    inline markup_struct& emplace_child(const std::string& name, markup_struct&& child) {
       return get_impl<parent_t>().emplace(name, child)->second;
     }
     inline parent_t::iterator begin() { return std::get<parent_t>(_impl).begin(); }
@@ -218,16 +215,13 @@ namespace c3::nu {
       get_impl<value_t>() = value_t();
     }
     inline void set_value(std::string str) {
-      get_impl<value_t>() = std::move(str);
-    }
-    inline void set_value(const char* cstr) {
-      set_value(std::string{cstr});
+      get_impl<value_t>().emplace<std::string>(std::move(str));
     }
     inline void set_value(bigint a) {
-      get_impl<value_t>() = a;
+      get_impl<value_t>().emplace<bigint>(std::move(a));
     }
     inline void set_value(std::vector<markup_struct> ds) {
-      get_impl<value_t>() = ds;
+      get_impl<value_t>().emplace<std::vector<markup_struct>>(ds);
     }
     template<typename Iter>
     inline void set_value(Iter begin, Iter end) {
@@ -236,16 +230,34 @@ namespace c3::nu {
 
   public:
     template<typename T>
-    markup_struct& operator=(T&& t) { set_value(std::forward<T&&>(t)); return *this; }
+    markup_struct& operator=(T&& t) {
+      if constexpr (std::is_same_v<typename remove_all<T>::type, obj_struct>) {
+        if constexpr (std::is_lvalue_reference_v<T>) {
+          _impl = t._impl;
+          _attr = t._attr;
+        }
+        else {
+          _impl = std::move(t._impl);
+          _attr = std::move(t._attr);
+        }
+      }
+      else
+        set_value(std::forward<T&&>(t));
+
+      return *this;
+    }
 
   public:
-    inline std::string& get_or_add_attr(std::string&& name) {
-      return _attr.emplace(name, markup_struct()).first->second;
+    inline std::string& get_or_add_attr(std::string_view name) {
+      return _attr.emplace(name, "").first->second;
     }
-    inline bool remove_attr(std::string&& name) {
+    inline std::string& set_attr(const std::string& name, std::string value) {
+      return _attr.insert_or_assign(name, std::move(value)).first->second;
+    }
+    inline bool remove_attr(const std::string& name) {
       return _attr.erase(name) != 0;
     }
-    inline std::string& get_child(std::string&& name) const {
+    inline std::string& get_child(const std::string& name) const {
       return std::visit([&](auto& x) -> std::string& {
         // If it is not a parent, then there is no chance of finding it,
         // even if it is monostate
@@ -256,19 +268,6 @@ namespace c3::nu {
     }
 
   public:
-    std::string& operator[](std::string&& name) { return get_or_add_attr(std::move(name)); }
-  };
-
-  template<>
-  markup_struct& markup_struct::operator=(markup_struct&& other) {
-    _impl = std::move(other._impl);
-    _attr = std::move(other._attr);
-    return *this;
-  };
-  template<>
-  markup_struct& markup_struct::operator=(const markup_struct& other) {
-    _impl = other._impl;
-    _attr = other._attr;
-    return *this;
+    std::string& operator[](const std::string& name) { return get_or_add_attr(std::move(name)); }
   };
 }

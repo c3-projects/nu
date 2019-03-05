@@ -8,18 +8,22 @@
 #include <iostream>
 
 namespace c3::nu {
-  inline std::string json_encode_datum(std::any t) {
-    if (auto x = try_any_cast<std::string>(t)) {
-      std::string str;
-      str.push_back('"');
-      str += cstr_encode(*x);
-      str.push_back('"');
-      return str;
-    }
-    else {
-      std::cout << t.type().name() << std::endl;
-      throw std::runtime_error("Could not cast json type");
-    }
+
+  inline std::string json_encode_datum(struct_value_t<obj_struct> t) {
+    return std::visit([](auto& x) -> std::string {
+      using T = typename remove_all<decltype(x)>::type;
+
+      if constexpr (std::is_same_v<T, std::monostate>)
+        return "{}";
+      //else if constexpr (std::is_same_v<T, nu::bigint>)
+      //  return std::to_string(x);
+      else if constexpr (std::is_same_v<T, std::string>)
+        return '"' + cstr_encode(x) + '"';
+      else {
+        std::cout << typeid(T).name() << std::endl;
+        throw std::runtime_error("Could not cast json type");
+      }
+    }, t);
   }
 
   inline void _json_encode_impl(const obj_struct& ds, std::string& acc) {
