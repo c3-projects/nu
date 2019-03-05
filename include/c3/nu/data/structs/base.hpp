@@ -7,11 +7,15 @@
 #include <variant>
 
 #include "c3/nu/data.hpp"
-#include "c3/nu/bigint.hpp"
 
 namespace c3::nu {
   template<typename StructType>
-  using struct_value_t = std::variant<std::monostate, nu::bigint, std::string, std::vector<StructType>>;
+  using struct_value_t = std::variant<std::monostate,
+                                      int64_t,
+                                      double,
+                                      std::string,
+                                      bool,
+                                      std::vector<StructType>>;
 
   class obj_struct {
   private:
@@ -93,21 +97,9 @@ namespace c3::nu {
     inline const value_t& get_value() const {
       return std::get<value_t>(_impl);
     }
-    inline void set_value() {
-      get_impl<value_t>() = value_t();
-    }
-    inline void set_value(std::string str) {
-      get_impl<value_t>().emplace<std::string>(std::move(str));
-    }
-    inline void set_value(bigint a) {
-      get_impl<value_t>().emplace<bigint>(std::move(a));
-    }
-    inline void set_value(std::vector<obj_struct> ds) {
-      get_impl<value_t>().emplace<std::vector<obj_struct>>(ds);
-    }
-    template<typename Iter>
-    inline void set_value(Iter begin, Iter end) {
-      get_impl<value_t>().emplace<std::vector<obj_struct>>(begin, end);
+    template<typename T, typename... Args>
+    inline void set_value(Args&&... args) {
+      get_impl<value_t>().emplace<T>(std::forward<Args>(args)...);
     }
 
   public:
@@ -115,18 +107,39 @@ namespace c3::nu {
 
   public:
     template<typename T>
-    inline obj_struct& operator=(T&& t) {
-      if constexpr (std::is_same_v<typename remove_all<T>::type, obj_struct>) {
+    void set(T&& t) {
+      using U = typename remove_all<T>::type;
+
+      if constexpr (std::is_same_v<U, obj_struct>) {
         if constexpr (std::is_lvalue_reference_v<T>)
           _impl = t._impl;
         else
           _impl = std::move(t._impl);
       }
+      else if constexpr (std::is_same_v<U, bool>)
+        set_value<bool>(t);
+      else if constexpr (std::is_floating_point_v<U>)
+        set_value<double>(t);
+      else if constexpr (std::is_integral_v<U>)
+        set_value<int64_t>(t);
       else
-        set_value(std::forward<T&&>(t));
+        set_value<std::string>(std::forward<T&&>(t));
+    }
 
+    template<typename T>
+    inline obj_struct& operator=(T&& t) {
+      set<T>(std::forward<T>(t));
       return *this;
     }
+
+    template<typename T>
+    inline obj_struct(T&&t) { set<T>(std::forward<T>(t)); }
+
+    inline obj_struct() = default;
+
+  public:
+    bool operator==(const obj_struct& obj) const { return _impl == obj._impl; }
+    bool operator!=(const obj_struct& obj) const { return _impl != obj._impl; }
   };
 
   class markup_struct {
@@ -211,40 +224,9 @@ namespace c3::nu {
     inline const value_t& get_value() const {
       return std::get<value_t>(_impl);
     }
-    inline void set_value() {
-      get_impl<value_t>() = value_t();
-    }
-    inline void set_value(std::string str) {
-      get_impl<value_t>().emplace<std::string>(std::move(str));
-    }
-    inline void set_value(bigint a) {
-      get_impl<value_t>().emplace<bigint>(std::move(a));
-    }
-    inline void set_value(std::vector<markup_struct> ds) {
-      get_impl<value_t>().emplace<std::vector<markup_struct>>(ds);
-    }
-    template<typename Iter>
-    inline void set_value(Iter begin, Iter end) {
-      get_impl<value_t>() = std::vector<markup_struct>(begin, end);
-    }
-
-  public:
-    template<typename T>
-    markup_struct& operator=(T&& t) {
-      if constexpr (std::is_same_v<typename remove_all<T>::type, obj_struct>) {
-        if constexpr (std::is_lvalue_reference_v<T>) {
-          _impl = t._impl;
-          _attr = t._attr;
-        }
-        else {
-          _impl = std::move(t._impl);
-          _attr = std::move(t._attr);
-        }
-      }
-      else
-        set_value(std::forward<T&&>(t));
-
-      return *this;
+    template<typename T, typename... Args>
+    inline void set_value(Args&&... args) {
+      get_impl<value_t>().emplace<T>(std::forward<Args>(args)...);
     }
 
   public:
@@ -269,5 +251,44 @@ namespace c3::nu {
 
   public:
     std::string& operator[](const std::string& name) { return get_or_add_attr(std::move(name)); }
+
+  public:
+    template<typename T>
+    void set(T&& t) {
+      using U = typename remove_all<T>::type;
+
+      if constexpr (std::is_same_v<U, markup_struct>) {
+        if constexpr (std::is_lvalue_reference_v<T>) {
+          _impl = t._impl;
+          _attr = t._attr;
+        }
+        else {
+          _impl = std::move(t._impl);
+          _attr = std::move(t._attr);
+        }
+      }
+      else if constexpr (std::is_same_v<U, bool>)
+        set_value<bool>(t);
+      else if constexpr (std::is_floating_point_v<U>)
+        set_value<double>(t);
+      else if constexpr (std::is_integral_v<U>)
+        set_value<int64_t>(t);
+      else
+        set_value<std::string>(std::forward<T&&>(t));
+    }
+    template<typename T>
+    inline markup_struct& operator=(T&& t) {
+      set<T>(std::forward<T>(t));
+      return *this;
+    }
+
+    template<typename T>
+    inline markup_struct(T&&t) { set<T>(std::forward<T>(t)); }
+
+    inline markup_struct() = default;
+
+  public:
+    bool operator==(const markup_struct& obj) const { return _impl == obj._impl && _attr == obj._attr; }
+    bool operator!=(const markup_struct& obj) const { return _impl != obj._impl && _attr != obj._attr; }
   };
 }

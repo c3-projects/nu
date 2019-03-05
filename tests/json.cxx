@@ -8,6 +8,16 @@ int main() {
   obj_struct ds;
   ds["foo"] = "bar";
   ds["qux"]["quux"] = "baz";
+  ds["wibble"] = 5;
+  ds["wobble"] = true;
+  ds["420"] = 6.9;
 
-  std::cout << json_encode(ds) << std::endl;
+  auto buf = json_encode(ds);
+
+  std::cout << buf << std::endl;
+
+  auto a = json_decode(buf);
+
+  if (ds != a)
+    throw std::runtime_error("Invalid buf");
 }
