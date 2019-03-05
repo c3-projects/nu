@@ -38,19 +38,39 @@ namespace c3::nu {
       _data.resize(std::max(_data.size(), other._data.size()), 0);
 
       auto sub_start = _data.rbegin() + (_data.size() - other._data.size());
-      auto a = sub_start;
-      for (auto b = other._data.rbegin(); a != _data.rend(); ++a, ++b) {
-        // Unsigned overflow is well-defined in c++, so we do not need to worry about it
-        uint8_t old_carry = carry;
 
-        carry = (*a < *b);
-        *a -= *b;
+      if (*this >= other) {
+        auto a = sub_start;
+        for (auto b = other._data.rbegin(); a != _data.rend(); ++a, ++b) {
+          // Unsigned overflow is well-defined in c++, so we do not need to worry about it
+          uint8_t old_carry = carry;
 
-        *a -= old_carry;
+          carry = (*a < *b);
+          *a -= *b;
+
+          *a -= old_carry;
+        }
+
+        if (carry)
+          *--sub_start -= 1;
       }
+      else {
+        auto a = sub_start;
+        for (auto b = other._data.rbegin(); a != _data.rend(); ++a, ++b) {
+          // Unsigned overflow is well-defined in c++, so we do not need to worry about it
+          uint8_t old_carry = carry;
 
-      if (carry)
-        *--sub_start -= 1;
+          carry = (*a > *b);
+          *a = *b - *a;
+
+          *a -= old_carry;
+        }
+
+        if (carry)
+          *--sub_start -= 1;
+
+        _sign = !_sign;
+      }
 
       clean();
     }
@@ -132,12 +152,23 @@ namespace c3::nu {
       nu::data be_data(serialised_size<T>());
       std::copy(_data.rbegin(), _data.rend(),
                 be_data.begin() + (serialised_size<T>() - _data.size()));
-      return deserialise<T>(be_data);
+      auto ret = deserialise<T>(be_data);
+      if (!_sign)
+        ret = -ret;
+
+      return ret;
     }
 
   public:
-    template<typename T, typename = typename std::is_integral<T>::type>
+    template<typename T, typename = typename std::enable_if<std::is_integral_v<T>>::type>
     inline bigint(T t) : _data(serialised_size<T>()) {
+      if (t < 0) {
+        _sign = false;
+        t = -t;
+      }
+      else
+        _sign = true;
+
       nu::data be_data = serialise(t);
       std::copy(be_data.rbegin(), be_data.rend(), _data.begin());
       clean();
