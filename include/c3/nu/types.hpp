@@ -65,4 +65,14 @@ namespace c3::nu {
       return std::nullopt;
     }
   }
+
+  template<typename T, typename... Types>
+  T& get_or_create_alternative(std::variant<Types...>& v) {
+    if (std::holds_alternative<std::monostate>(v)) {
+      T& ret = v.template emplace<T>();
+      return ret;
+    }
+    else
+      return std::get<T>(v);
+  }
 }

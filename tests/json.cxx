@@ -1,6 +1,7 @@
 #include "c3/nu/data/structs/json.hpp"
 
 #include <iostream>
+#include <fstream>
 
 using namespace c3::nu;
 
@@ -11,19 +12,25 @@ int main() {
   ds["wibble"] = 5;
   ds["wobble"] = true;
   ds["420"] = 0.5;
+  ds["arr"].as<obj_struct::arr_t>() = { -1, 2, 3, 4 };
 
   auto buf = json_encode(ds);
 
-  //std::cout << buf << std::endl;
+  auto _ds = json_decode(buf);
 
-  auto a = json_decode(buf);
+  auto _buf = json_encode(_ds);
 
-  for (auto& i : ds)
-    std::cout << json_encode(i.second) << std::endl;
-
-  for (auto& i : a)
-    std::cout << json_encode(i.second) << std::endl;
-
-  if (ds != a)
+  if (ds != _ds)
     throw std::runtime_error("Invalid buf");
+
+  std::ifstream ifs("testfiles/fuzz.json");
+  std::string line;
+  while (std::getline(ifs, line)) {
+    try { json_decode(line); }
+    catch (std::exception& e) {
+      std::cout << line << std::endl;
+      std::cerr << e.what() << std::endl;
+    }
+  }
 }
+

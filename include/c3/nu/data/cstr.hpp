@@ -87,8 +87,8 @@ namespace c3::nu {
               else
                 throw std::runtime_error("strtol failed");
 
-              iter = end;
-            }
+              iter += 3;
+            } break;
             case ('U') : {
               auto begin = ++iter;
               if (buf.end() - begin < 8)
@@ -103,7 +103,7 @@ namespace c3::nu {
                 throw std::runtime_error("strtol failed");
 
               iter = end;
-            }
+            } break;
             default:
               if (*iter >= '0' && *iter <= '7') {
                 auto begin = iter;
