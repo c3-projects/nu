@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-set(VERSION 0.10.1)
+set(VERSION 0.11-rc1)
 
 string(REGEX REPLACE "-.*" "" FRIENDLY_VERSION ${VERSION})
 
@@ -17,7 +17,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include(GNUInstallDirs)
 
 file(GLOB_RECURSE tests tests/*.cxx)
-
+file(COPY tests/testfiles DESTINATION ${CMAKE_BINARY_DIR})
 foreach(test ${tests})
   file(RELATIVE_PATH test_rel ${CMAKE_SOURCE_DIR}/tests/ ${test})
   get_filename_component(test_fname ${test_rel} NAME_WE)

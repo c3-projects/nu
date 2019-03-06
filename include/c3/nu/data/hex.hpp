@@ -64,16 +64,19 @@ namespace c3::nu {
     return ret;
   }
   template<typename Iter>
-  inline void hex_decode_data(const std::string& str, Iter begin, Iter end) {
-    std::istringstream ss(str);
+  inline void hex_decode_data(std::string_view str, Iter begin, Iter end) {
+    std::stringstream ss;
+    ss << str;
     hex_decode_data(ss, begin, end);
   }
-  inline void hex_decode_data(const std::string& str, data_ref b) {
-    std::istringstream ss(str);
+  inline void hex_decode_data(std::string_view str, data_ref b) {
+    std::stringstream ss;
+    ss << str;
     hex_decode_data(ss, b.begin(), b.end());
   }
-  inline data hex_decode_data(const std::string& str) {
-    std::istringstream ss(str);
+  inline data hex_decode_data(std::string_view str) {
+    std::stringstream ss;
+    ss << str;
     return hex_decode_data(ss);
   }
 
@@ -83,7 +86,7 @@ namespace c3::nu {
     return hex_encode_data(b);
   }
   template<typename T>
-  inline T hex_decode(const std::string& str) {
+  inline T hex_decode(std::string_view str) {
     auto b = hex_decode_data(str);
     return deserialise<T>(b);
   }
