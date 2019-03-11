@@ -52,16 +52,17 @@ namespace c3::nu {
     if (ds.is_parent()) {
       acc.push_back('{');
       auto iter = ds.begin();
-      while (true) {
-        acc.push_back('"');
-        acc.append(cstr_encode(iter->first));
-        acc.append("\":");
-        _json_encode_impl(iter->second, acc);
-        if (++iter == ds.end())
-          break;
-        else
-          acc.push_back(',');
-      }
+      if (iter != ds.end())
+        while (true) {
+          acc.push_back('"');
+          acc.append(cstr_encode(iter->first));
+          acc.append("\":");
+          _json_encode_impl(iter->second, acc);
+          if (++iter == ds.end())
+            break;
+          else
+            acc.push_back(',');
+        }
       acc.push_back('}');
     }
     else {
