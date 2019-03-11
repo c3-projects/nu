@@ -161,11 +161,19 @@ namespace c3::nu {
   public:
     using value_t = std::variant<std::string, markup_struct>;
 
+    // I'm sure I will use this later
+  public:
+    class value_tag_t {};
+    class elem_tag_t {};
+
+    constexpr static value_tag_t value_tag;
+    constexpr static elem_tag_t elem_tag;
+
+  public:
+    std::string type;
+    std::map<std::string, std::string, std::less<>> attrs;
   private:
     std::vector<std::unique_ptr<value_t>> _children;
-  public:
-    std::map<std::string, std::string, std::less<>> attrs;
-    std::string type;
 
   public:
     inline std::string& attr(std::string_view attr) {
@@ -182,11 +190,36 @@ namespace c3::nu {
     }
 
   public:
-    inline value_t& add_value(std::string val) {
-      return *_children.emplace_back(std::make_unique<value_t>(std::move(val)));
+    template<typename... Args>
+    inline std::string& add_value(Args... args) {
+      auto& ret = _children.emplace_back(std::make_unique<value_t>(std::in_place_type<std::string>, std::forward<Args>(args)...));
+      return std::get<std::string>(*ret);
     }
-    inline value_t& add_markup(markup_struct val) {
-      return *_children.emplace_back(std::make_unique<value_t>(std::move(val)));
+    template<typename... Args>
+    inline markup_struct& add_elem(Args... args) {
+      auto& ret = _children.emplace_back(std::make_unique<value_t>(std::in_place_type<markup_struct>, std::forward<Args>(args)...));
+      return std::get<markup_struct>(*ret);
+    }
+    inline void add() {}
+    template<typename ConstructorArg, typename... Args>
+    inline void add(value_tag_t, ConstructorArg carg, Args... args) {
+      add_value(std::forward<ConstructorArg>(carg));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename ConstructorArg, typename... Args>
+    inline void add(elem_tag_t, ConstructorArg carg, Args... args) {
+      add_elem(std::forward<ConstructorArg>(carg));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(std::string str, Args... args) {
+      add_value(std::move(str));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(markup_struct ms, Args... args) {
+      add_elem(std::move(ms));
+      add(std::forward<Args>(args)...);
     }
     inline markup_struct& get_child_by_attr(std::string_view attr, std::string_view val) const {
       for (auto& i : _children) {
@@ -232,7 +265,7 @@ namespace c3::nu {
       bool operator!=(const iterator& other) const { return iter != other.iter; }
 
     private:
-      inline iterator(decltype(iter) iter) : iter{iter} {}
+      inline iterator(decltype(iter)&& iter) : iter{std::move(iter)} {}
     public:
       inline iterator() = default;
     };
@@ -258,7 +291,7 @@ namespace c3::nu {
       bool operator!=(const const_iterator& other) const { return iter != other.iter; }
 
     private:
-      inline const_iterator(decltype(iter) iter) : iter{iter} {}
+      inline const_iterator(decltype(iter)&& iter) : iter{std::move(iter)} {}
     public:
       inline const_iterator() = default;
     };
@@ -270,6 +303,35 @@ namespace c3::nu {
     inline const_iterator end() const { return _children.end(); }
     inline const_iterator cbegin() const { return _children.cbegin(); }
     inline const_iterator cend() const { return _children.cend(); }
+
+  public:
+    inline markup_struct(std::string type) : type{std::move(type)} {}
+    template<typename... Args>
+    inline markup_struct(std::string type, Args... args) : type{std::move(type)} {
+      add(std::forward<Args>(args)...);
+    }
+
+  public:
+    inline markup_struct() = default;
+    inline markup_struct(const markup_struct& other) : type{other.type}, attrs{other.attrs} {
+      abort();
+      for (auto& i : other._children) {
+        _children.push_back(std::make_unique<value_t>(*i));
+      }
+    };
+    inline markup_struct(markup_struct&& other) = default;
+
+    inline markup_struct& operator=(const markup_struct& other) {
+      abort();
+      type = other.type;
+      attrs = other.attrs;
+      for (auto& i : other._children) {
+        _children.push_back(std::make_unique<value_t>(*i));
+      }
+      return *this;
+    }
+    inline markup_struct& operator=(markup_struct&& other) = default;
   };
 }
+
 
