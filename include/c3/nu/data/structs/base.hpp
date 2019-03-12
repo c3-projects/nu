@@ -161,7 +161,6 @@ namespace c3::nu {
   public:
     using value_t = std::variant<std::string, markup_struct>;
 
-    // I'm sure I will use this later
   public:
     class value_tag_t {};
     class elem_tag_t {};
@@ -213,12 +212,17 @@ namespace c3::nu {
     }
     template<typename... Args>
     inline void add(std::string str, Args... args) {
-      add_value(std::move(str));
+      _children.emplace_back(std::make_unique<value_t>(std::in_place_type<std::string>, std::move(str)));
       add(std::forward<Args>(args)...);
     }
     template<typename... Args>
     inline void add(markup_struct ms, Args... args) {
-      add_elem(std::move(ms));
+      _children.emplace_back(std::make_unique<value_t>(std::in_place_type<markup_struct>, std::move(ms)));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(value_t v, Args... args) {
+      _children.emplace_back(std::make_unique<value_t>(std::move(v)));
       add(std::forward<Args>(args)...);
     }
     inline markup_struct& get_child_by_attr(std::string_view attr, std::string_view val) const {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "c3/nu/data/structs/base.hpp"
+#include "c3/nu/safe_iter.hpp"
 #include <regex>
 
 namespace c3::nu {
@@ -75,5 +76,62 @@ namespace c3::nu {
     _xml_encode_impl(ms, ret);
 
     return ret;
+  }
+
+  inline markup_struct::value_t _xml_decode_impl(safe_iter<std::string_view::iterator>& iter) {
+    class hit_elem_end {
+    public:
+      std::string type;
+
+    public:
+      inline hit_elem_end(decltype(type)&& type) : type(std::move(type)) {}
+    };
+
+    // TODO: handle xml:space
+    while (std::isspace(*iter)) ++iter;
+
+    if (*iter == '<') {
+      ++iter;
+      if (*iter == '/') {
+        auto type_begin = ++iter;
+        while (*++iter != ' ');
+        throw hit_elem_end({type_begin, iter});
+      }
+
+      markup_struct ret;
+      {
+        auto type_begin = ++iter;
+        while (*++iter != ' ');
+        ret.type = {type_begin, iter};
+        while (*++iter != '>');
+        iter++;
+      }
+
+      // TODO: enumerate attrs
+      // TODO: check for "/>"
+
+      try {
+        while(true)
+          ret.add(_xml_decode_impl(iter));
+      }
+      catch (hit_elem_end e) {
+        if (e.type != ret.type)
+          throw std::runtime_error("Mismatched tags");
+      }
+
+      return ret;
+    }
+    else {
+      auto str_begin = iter;
+      while (*iter != '<' && !iter.is_end())
+        ++iter;
+
+      return std::string{str_begin, iter};
+    }
+  }
+
+  inline markup_struct xml_decode(std::string_view str) {
+    auto iter = safe(str).begin();
+    return std::get<markup_struct>(_xml_decode_impl(iter));
   }
 }
