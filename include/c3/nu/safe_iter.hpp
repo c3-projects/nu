@@ -40,7 +40,6 @@ namespace c3::nu {
     inline typename traits::difference_type operator-(const safe_iter& other) {
       return base - other.base;
     }
-
     inline safe_iter& operator+=(typename traits::difference_type diff) {
       if (diff < 0)
         throw std::runtime_error("Cannot decrement safe iterators");
@@ -62,6 +61,9 @@ namespace c3::nu {
     inline safe_iter operator[](typename traits::difference_type diff) {
       auto cpy = *this;
       return this += diff;
+    }
+    inline safe_iter operator+(typename traits::difference_type diff) {
+      return (*this)[diff];
     }
 
   public:
