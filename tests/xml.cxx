@@ -10,11 +10,17 @@ int main() {
   {
     auto& body = html.add_elem("body");
     body.add(
-      markup_struct{"h1", markup_struct::value_tag, "Hello, World!"},
-      markup_struct::value_tag, "Foobar!"
+      markup_struct{"h1", markup_struct::value, "Hello, World!"},
+      markup_struct::value, "Foobar!",
+      markup_struct{"div",
+        markup_struct::attr, "style", "color:red",
+        markup_struct::value, "wibble"
+      }
     );
   }
 
-  std::cout << xml_encode(html) << std::endl;
+  auto buf = xml_encode(html);
+
+  auto html_ = xml_decode(buf);
 }
 

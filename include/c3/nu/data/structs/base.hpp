@@ -164,9 +164,11 @@ namespace c3::nu {
   public:
     class value_tag_t {};
     class elem_tag_t {};
+    class attr_tag_t {};
 
-    constexpr static value_tag_t value_tag;
-    constexpr static elem_tag_t elem_tag;
+    constexpr static value_tag_t value;
+    constexpr static elem_tag_t elem;
+    constexpr static attr_tag_t attr;
 
   public:
     std::string type;
@@ -175,13 +177,13 @@ namespace c3::nu {
     std::vector<std::unique_ptr<value_t>> _children;
 
   public:
-    inline std::string& attr(std::string_view attr) {
-      if (auto iter = attrs.find(attr); iter != attrs.end()) return iter->second;
-      else throw std::out_of_range("markup_struct does not have the requested attribute");
+    inline std::string& get_or_create_attr(std::string_view attr) {
+      // This will emplace if it doesn't exist, and find if it does
+      return attrs.emplace(attr, std::string()).first->second;
     }
-    inline const std::string& attr(std::string_view attr) const {
-      if (auto iter = attrs.find(attr); iter != attrs.end()) return iter->second;
-      else throw std::out_of_range("markup_struct does not have the requested attribute");
+    inline std::string& get_or_create_attr(std::string&& attr) {
+      // This will emplace if it doesn't exist, and find if it does
+      return attrs.emplace(std::move(attr), std::string()).first->second;
     }
     inline bool attr_equals(std::string_view attr, std::string_view val) const {
       if (auto iter = attrs.find(attr); iter != attrs.end()) return iter->second == val;
@@ -208,6 +210,11 @@ namespace c3::nu {
     template<typename ConstructorArg, typename... Args>
     inline void add(elem_tag_t, ConstructorArg carg, Args... args) {
       add_elem(std::forward<ConstructorArg>(carg));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(attr_tag_t, std::string name, std::string value, Args... args) {
+      get_or_create_attr(name) = value;
       add(std::forward<Args>(args)...);
     }
     template<typename... Args>
