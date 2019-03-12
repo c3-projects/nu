@@ -3,19 +3,18 @@
 #include <iterator>
 #include "c3/nu/moveable_ptr.hpp"
 
+#include <vector>
+
 namespace c3::nu {
+  template<typename Iter>
+  struct safe_iter_traits : public std::iterator_traits<Iter> {
+    using iterator_category = typename std::forward_iterator_tag;
+  };
 
   template<typename Iter>
-  class safe_iter {
+  class safe_iter : public safe_iter_traits<Iter> {
   private:
-    using traits = std::iterator_traits<Iter>;
-
-  public:
-    using diffence_type = typename traits::difference_type;
-    using value_type = typename traits::value_type;
-    using pointer = typename traits::pointer;
-    using reference = typename traits::reference;
-    using iterator_category = typename std::forward_iterator_tag;
+    using traits = safe_iter_traits<Iter>;
 
   private:
     Iter base;
@@ -44,7 +43,7 @@ namespace c3::nu {
       if (diff < 0)
         throw std::runtime_error("Cannot decrement safe iterators");
 
-      if constexpr (std::is_same_v<traits::iterator_category, std::random_access_iterator_tag>) {
+      if constexpr (std::is_same_v<typename traits::iterator_category, std::random_access_iterator_tag>) {
         auto dist_from_end = end - base;
         if (diff > dist_from_end)
           base = end;
@@ -52,7 +51,7 @@ namespace c3::nu {
           base += dist_from_end;
       }
       else {
-        while (diff > 0 && base != end)
+        for (; diff > 0 && base != end; --diff)
           incr();
       }
       return *this;
@@ -60,7 +59,7 @@ namespace c3::nu {
 
     inline safe_iter operator[](typename traits::difference_type diff) {
       auto cpy = *this;
-      return this += diff;
+      return cpy += diff;
     }
     inline safe_iter operator+(typename traits::difference_type diff) {
       return (*this)[diff];
@@ -73,7 +72,7 @@ namespace c3::nu {
       else
         return *base;
     }
-    inline typename traits::reference operator->() {
+    inline typename traits::pointer operator->() {
       if (base == end)
         throw std::range_error("Tried to deref safe iterator out of range");
       else
