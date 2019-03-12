@@ -89,6 +89,10 @@ namespace c3::nu {
 
   public:
     inline bool is_end() { return base == end; }
+    inline Iter& get_base() { return base; }
+    inline Iter& get_end() { return end; }
+    inline const Iter& get_base() const { return base; }
+    inline const Iter& get_end() const { return end; }
 
   public:
     inline safe_iter(Iter base, Iter end) : base{base}, end{end} {}
