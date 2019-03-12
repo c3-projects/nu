@@ -28,11 +28,11 @@ namespace c3::nu {
     }
 
   public:
-    inline safe_iter operator++() {
+    inline safe_iter& operator++() {
       incr();
       return *this;
     }
-    inline safe_iter operator++(int) {
+    inline safe_iter& operator++(int) {
       auto cpy = *this;
       incr();
       return cpy;
