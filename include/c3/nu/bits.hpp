@@ -7,9 +7,7 @@
 #include <ostream>
 
 #include "c3/nu/data.hpp"
-#include "c3/nu/integral.hpp"
-
-#include "c3/nu/int_maths.hpp"
+#include "c3/nu/integer.hpp"
 
 #include <climits>
 
@@ -20,7 +18,7 @@ namespace c3::nu {
   using byte_t = unsigned char;
 
   constexpr size_t __MAX_BIT_DATUM_SIZE = 64;
-  using n_bits_rep_t = integral_fast_upto_t<__MAX_BIT_DATUM_SIZE>;
+  using n_bits_rep_t = integer_fast_upto_t<__MAX_BIT_DATUM_SIZE>;
   constexpr n_bits_rep_t MAX_BIT_DATUM_SIZE = static_cast<n_bits_rep_t>(__MAX_BIT_DATUM_SIZE);
 
   template<bool> struct Range;

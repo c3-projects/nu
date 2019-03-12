@@ -1,4 +1,4 @@
-#include "c3/nu/structs/mixed.hpp"
+#include "c3/nu/data/collections/mixed.hpp"
 
 using namespace c3::nu;
 

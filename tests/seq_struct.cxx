@@ -1,4 +1,4 @@
-#include "c3/nu/structs/sequence.hpp"
+#include "c3/nu/data/collections/sequence.hpp"
 
 using namespace c3::nu;
 

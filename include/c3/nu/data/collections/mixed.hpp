@@ -1,6 +1,6 @@
 #pragma once
 
-#include "c3/nu/int_maths.hpp"
+#include "c3/nu/integer.hpp"
 #include "c3/nu/data.hpp"
 
 namespace c3::nu {
@@ -56,12 +56,12 @@ namespace c3::nu {
       head = deserialise<Head>(b.subspan(0, serialised_size<Head>()));
     }
     else {
-      if (!try_add(our_chunk_size, serialised_size<SizeType>()))
+      if (!integer_try_add(our_chunk_size, serialised_size<SizeType>()))
         throw serialisation_failure("Element size overflows size_t");
 
       if constexpr (sizeof...(Tail) != 0) {
         SizeType len_s = deserialise<SizeType>(b.subspan(0, serialised_size<SizeType>()));
-        if (!try_add(our_chunk_size, len_s))
+        if (!integer_try_add(our_chunk_size, len_s))
           throw serialisation_failure("Possibly fake element size overflows size_t");
          head = deserialise<Head>(b.subspan(serialised_size<SizeType>(), static_cast<size_t>(len_s)));
       }
