@@ -4,6 +4,7 @@
 #include "c3/nu/data/base64.hpp"
 #include "c3/nu/data/structs/base.hpp"
 #include "c3/nu/types.hpp"
+#include "c3/nu/safe_iter.hpp"
 
 #include <iostream>
 
@@ -80,33 +81,23 @@ namespace c3::nu {
   inline bool _is_json_eot(char c) {
     return _is_json_delim(c) || c == '}' || c == ']';
   }
-  inline std::string _json_decode_string(std::string_view::const_iterator& begin, std::string_view::const_iterator end) {
-    auto str_start = ++begin;
-    bool is_escaped = false;
-    while (true) {
-      if (begin == end)
-        throw std::runtime_error("Unterminated string");
-      else if (!is_escaped && *begin == '"')
-        break;
-      else if (is_escaped)
+  inline std::string _json_decode_string(safe_iter<std::string_view::const_iterator>& iter) {
+    auto str_start = ++iter;
+    for (bool is_escaped = false; !(!is_escaped && *iter == '"'); ++iter) {
+      if (is_escaped)
         is_escaped = false;
-      else if (*begin == '\\')
+      else if (*iter == '\\')
         is_escaped = true;
-
-      ++begin;
     }
 
-    auto str_len = begin - str_start;
+    auto str_len = iter - str_start;
 
     return cstr_decode(std::string_view(&*str_start, str_len));
   }
 
-  inline obj_struct _json_decode_impl(std::string_view::const_iterator& begin, std::string_view::const_iterator end) {
-    if (begin == end)
-      throw std::runtime_error("Hit end prematurely");
-
-    if (std::isspace(*begin))
-      return _json_decode_impl(++begin, end);
+  inline obj_struct _json_decode_impl(safe_iter<std::string_view::const_iterator>& iter) {
+    if (std::isspace(*iter))
+      return _json_decode_impl(++iter);
     else if (*begin == '{') {
       if (auto a = begin + 1; a != end && *a == '}')
         return obj_struct::empty_parent();
