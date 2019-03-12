@@ -162,17 +162,17 @@ namespace c3::nu {
       ++iter;
       if (*iter == '/') {
         auto type_begin = ++iter;
-        while (!std::isspace(*++iter));
-        throw hit_elem_end({type_begin, iter});
+        while (!std::isspace(*++iter) && *iter != '>');
+        auto type_end = iter;
+        ++iter;
+        throw hit_elem_end({type_begin, type_end});
       }
 
       markup_struct ret;
       {
-        auto type_begin = ++iter;
-        while (*++iter != ' ');
+        auto type_begin = iter;
+        while (*++iter != ' ' && *iter != '>');
         ret.type = {type_begin, iter};
-        while (*++iter != '>');
-        iter++;
       }
 
       {
@@ -198,8 +198,16 @@ namespace c3::nu {
         }
       }
 
-      if (*iter == '/' && *++iter == '>')
-        return ret;
+      if (*iter == '/') {
+        if (*++iter != '>')
+          throw std::runtime_error("Bad tag closer");
+        else
+          return ret;
+      }
+
+      while (*iter != '>') ++iter;
+
+      ++iter;
 
       try {
         while(true)

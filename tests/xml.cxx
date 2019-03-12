@@ -21,6 +21,14 @@ int main() {
 
   auto buf = xml_encode(html);
 
-  auto html_ = xml_decode(buf);
+  markup_struct html_ = xml_decode(buf);
+
+  auto buf_ = xml_encode(html_);
+
+  if (buf != buf_)
+    throw std::runtime_error("Mismatched xml");
+
+  if (html != html_)
+    throw std::runtime_error("Mismatched structs");
 }
 

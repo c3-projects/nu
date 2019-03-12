@@ -342,6 +342,14 @@ namespace c3::nu {
       return *this;
     }
     inline markup_struct& operator=(markup_struct&& other) = default;
+
+  public:
+    inline bool operator==(const markup_struct& other) const {
+      return _children == other._children && attrs == other.attrs && type == other.type;
+    }
+    inline bool operator!=(const markup_struct& other) const {
+      return !(*this == other);
+    }
   };
 }
 
