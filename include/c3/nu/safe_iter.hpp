@@ -31,7 +31,7 @@ namespace c3::nu {
       incr();
       return *this;
     }
-    inline safe_iter& operator++(int) {
+    inline safe_iter operator++(int) {
       auto cpy = *this;
       incr();
       return cpy;
