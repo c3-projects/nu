@@ -108,7 +108,7 @@ namespace c3::nu {
         while (*iter != '"') ++iter;
         std::string key = _json_decode_string(iter);
         // Iterate to the value
-        while (*iter != ':');
+        while (*++iter != ':');
         ++iter;
         // Get the next value
         ret.get_or_add_child(key) = _json_decode_impl(iter);
@@ -153,7 +153,7 @@ namespace c3::nu {
           is_float = true;
         buf.push_back(*iter);
       }
-      while (!(++iter).is_end() || !_is_json_eot(*iter));
+      while (!(++iter).is_end() && !_is_json_eot(*iter));
       if (is_float)
         return { std::stod(buf) };
       else
@@ -167,7 +167,7 @@ namespace c3::nu {
       //
       // Lets grab the next delimiter, and parse the resultant iterator range
       auto lit_start = iter;
-      while (!(++iter).is_end() || !_is_json_eot(*iter));
+      while (!(++iter).is_end() && !_is_json_eot(*iter));
 
       static const char* true_str = "true";
       static const char* false_str = "false";
