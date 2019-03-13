@@ -2,6 +2,7 @@
 
 #include <iterator>
 #include "c3/nu/moveable_ptr.hpp"
+#include "c3/nu/sfinae.hpp"
 
 #include <vector>
 
@@ -99,24 +100,61 @@ namespace c3::nu {
     inline safe_iter() = default;
   };
 
-  template<typename T>
+  template<typename T, typename = void>
   class safe {
   public:
-    using iterator = safe_iter<typename T::iterator>;
-    using const_iterator = safe_iter<typename T::const_iterator>;
+    using iterator = safe_iter<iterator_t<T>>;
+    using const_iterator = safe_iter<const_iterator_t<T>>;
 
   private:
     moveable_ptr<T> base = nullptr;
 
   public:
-    iterator begin() { return { base->begin(), base->end() }; }
-    iterator end() { return { base->end(), base->end() }; }
-    iterator begin() const { return { base->begin(), base->end() }; }
-    iterator end() const { return { base->end(), base->end() }; }
-    const_iterator cbegin() const { return { base->cbegin(), base->cend() }; }
-    const_iterator cend() const { return { base->cend(), base->cend() }; }
+    iterator begin() { return { std::begin(*base), std::end(*base) }; }
+    iterator end() { return { std::end(*base), std::end(*base) }; }
+    const_iterator begin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    const_iterator end() const { return { std::cend(*base), std::cend(*base) }; }
+    const_iterator cbegin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    const_iterator cend() const { return { std::cend(*base), std::cend(*base) }; }
 
   public:
     inline safe(T& t) : base{&t} {}
   };
+
+  template<typename T>
+  class safe<T, typename std::enable_if<std::is_const_v<T>>::type> {
+  public:
+    using const_iterator = safe_iter<const_iterator_t<T>>;
+
+  private:
+    moveable_ptr<T> base = nullptr;
+
+  public:
+    const_iterator begin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    const_iterator end() const { return { std::cend(*base), std::cend(*base) }; }
+    const_iterator cbegin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    const_iterator cend() const { return { std::cend(*base), std::cend(*base) }; }
+
+  public:
+    inline safe(T& t) : base{&t} {}
+  };
+
+  template<typename BaseT>
+  inline safe_iter<iterator_t<BaseT>> safe_begin(BaseT& b) {
+    return { std::begin(b), std::end(b) };
+  }
+  template<typename BaseT>
+  inline safe_iter<typename BaseT::iterator> safe_end(BaseT& b) {
+    return { std::begin(b), std::end(b) };
+  }
+
+  template<typename BaseT>
+  inline safe_iter<iterator_t<BaseT>> safe_cbegin(const BaseT& b) {
+    return { std::cbegin(b), std::cend(b) };
+  }
+  template<typename BaseT>
+  inline safe_iter<typename BaseT::iterator> safe_cend(const BaseT& b) {
+    return { std::cbegin(b), std::cend(b) };
+  }
 }
+

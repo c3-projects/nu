@@ -56,6 +56,12 @@ namespace c3::nu {
   template<typename FirstType, typename... Types>
   struct nth_type<0, FirstType, Types...> { using type = FirstType; };
 
-  template <size_t arg, typename... Ts>
+  template<size_t arg, typename... Ts>
   using nth_type_t = typename nth_type<arg, Ts...>::type;
+
+  template<typename T>
+  using iterator_t = decltype(std::begin(std::declval<T&>()));
+
+  template<typename T>
+  using const_iterator_t = decltype(std::cbegin(std::declval<T&>()));
 }
