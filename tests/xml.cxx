@@ -28,6 +28,9 @@ int main() {
   if (buf != buf_)
     throw std::runtime_error("Mismatched xml");
 
+  if (html.end() - html.begin() != html_.end() - html_.begin())
+    throw std::runtime_error("Mismatched struct length");
+
   if (html != html_)
     throw std::runtime_error("Mismatched structs");
 }

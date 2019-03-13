@@ -146,6 +146,21 @@ namespace c3::nu {
     return ret;
   }
 
+  inline std::string xml_encode(std::string_view value) {
+    return xml_string_escape(value);
+  }
+
+  inline std::string xml_encode(const markup_struct::value_t& v) {
+    return std::visit([](auto& x) -> std::string {
+      if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, markup_struct>) {
+        return xml_encode(x);
+      }
+      else {
+        return xml_encode(std::string_view(x));
+      }
+    }, v);
+  }
+
   inline markup_struct::value_t _xml_decode_impl(safe_iter<std::string_view::iterator>& iter) {
     class hit_elem_end {
     public:

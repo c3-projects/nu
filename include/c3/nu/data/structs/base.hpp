@@ -252,24 +252,34 @@ namespace c3::nu {
       }
       throw std::out_of_range("No child had the given attribute");
     }
+    size_t n_children() const { return _children.size(); }
 
   public:
     class iterator {
       friend markup_struct;
     private:
       decltype(_children)::iterator iter;
+
+    public:
+      using iterator_category = std::random_access_iterator_tag;
+      using value_type = value_t;
+      using difference_type = decltype(iter)::difference_type;
+      using pointer = value_type*;
+      using reference = value_type&;
+
     public:
       inline iterator& operator++() { iter++; return *this; }
       inline iterator& operator--() { iter--; return *this; }
       inline iterator& operator++(int) { ++iter; return *this; }
       inline iterator& operator--(int) { --iter; return *this; }
       inline ssize_t operator-(const iterator& other) { return iter - other.iter; }
-      inline iterator operator+(ssize_t s) const { return iter + s; }
-      inline iterator operator-(ssize_t s) const { return iter - s; }
-      inline iterator& operator+=(ssize_t s) { iter += s; return *this; }
-      inline iterator& operator-=(ssize_t s) { iter -= s; return *this; }
-      inline value_t& operator*() { return **iter; }
-      inline value_t* operator->() { return (*iter).get(); }
+      inline iterator operator+(difference_type s) const { return iter + s; }
+      inline iterator operator[](difference_type s) const { return iter + s; }
+      inline iterator operator-(difference_type s) const { return iter - s; }
+      inline iterator& operator+=(difference_type s) { iter += s; return *this; }
+      inline iterator& operator-=(difference_type s) { iter -= s; return *this; }
+      inline reference operator*() { return **iter; }
+      inline pointer operator->() { return (*iter).get(); }
       inline const value_t& operator*() const { return **iter; }
       inline const value_t* operator->() const { return (*iter).get(); }
       bool operator==(const iterator& other) const { return iter == other.iter; }
@@ -284,6 +294,14 @@ namespace c3::nu {
       friend markup_struct;
     private:
       decltype(_children)::const_iterator iter;
+
+    public:
+      using iterator_category = std::random_access_iterator_tag;
+      using value_type = value_t;
+      using difference_type = decltype(iter)::difference_type;
+      using pointer = const value_type*;
+      using reference = const value_type&;
+
     public:
       inline const_iterator& operator++() { iter++; return *this; }
       inline const_iterator& operator--() { iter--; return *this; }
@@ -294,10 +312,8 @@ namespace c3::nu {
       inline const_iterator operator-(ssize_t s) const { return iter - s; }
       inline const_iterator& operator+=(ssize_t s) { iter += s; return *this; }
       inline const_iterator& operator-=(ssize_t s) { iter -= s; return *this; }
-      inline value_t& operator*() { return **iter; }
-      inline value_t* operator->() { return (*iter).get(); }
-      inline const value_t& operator*() const { return **iter; }
-      inline const value_t* operator->() const { return (*iter).get(); }
+      inline reference operator*() const { return **iter; }
+      inline pointer operator->() const { return (*iter).get(); }
       bool operator==(const const_iterator& other) const { return iter == other.iter; }
       bool operator!=(const const_iterator& other) const { return iter != other.iter; }
 
@@ -345,7 +361,7 @@ namespace c3::nu {
 
   public:
     inline bool operator==(const markup_struct& other) const {
-      return _children == other._children && attrs == other.attrs && type == other.type;
+      return std::equal(begin(), end(), other.begin(), other.end()) && attrs == other.attrs && type == other.type;
     }
     inline bool operator!=(const markup_struct& other) const {
       return !(*this == other);
