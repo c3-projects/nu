@@ -25,7 +25,7 @@ namespace c3::nu {
         case (' '): ret.push_back(' '); break;
 
         default: {
-          if (std::isalnum(i))
+          if (std::isprint(i))
             ret.push_back(i);
           else {
             ret.push_back('\\');

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "c3/nu/data.hpp"
-#include <c3/nu/int_maths.hpp>
+#include "c3/nu/integer.hpp"
 
 namespace c3::nu {
   template<typename Iter>
@@ -65,7 +65,7 @@ namespace c3::nu {
 
     while (b.size() > 0) {
       SizeType len_s = deserialise<SizeType>(b.subspan(0, serialised_size<SizeType>()));
-      if (!can_cast<size_t>(len_s))
+      if (!integer_can_hold<size_t>(len_s))
         throw serialisation_failure("Element size overflows size_t");
       size_t len = len_s;
       ret.emplace_back(deserialise<T>(b.subspan(serialised_size<SizeType>(), len)));

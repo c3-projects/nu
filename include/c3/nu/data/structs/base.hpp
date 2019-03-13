@@ -107,11 +107,11 @@ namespace c3::nu {
     }
 
   public:
-    obj_struct& operator[](const std::string& name) { return get_or_add_child(std::move(name)); }
+    inline obj_struct& operator[](const std::string& name) { return get_or_add_child(std::move(name)); }
 
   public:
     template<typename T>
-    void set(T&& t) {
+    inline void set(T&& t) {
       using U = typename remove_all<T>::type;
 
       if constexpr (std::is_same_v<U, obj_struct>) {
@@ -146,14 +146,227 @@ namespace c3::nu {
     inline obj_struct() = default;
 
   public:
-    static obj_struct empty_parent() {
+    static inline obj_struct empty_parent() {
       obj_struct ret;
       ret._impl.emplace<parent_t>();
       return ret;
     }
 
   public:
-    bool operator==(const obj_struct& obj) const { return _impl == obj._impl; }
-    bool operator!=(const obj_struct& obj) const { return _impl != obj._impl; }
+    inline bool operator==(const obj_struct& obj) const { return _impl == obj._impl; }
+    inline bool operator!=(const obj_struct& obj) const { return _impl != obj._impl; }
+  };
+
+  class markup_struct {
+  public:
+    using value_t = std::variant<std::string, markup_struct>;
+
+  public:
+    class value_tag_t {};
+    class elem_tag_t {};
+    class attr_tag_t {};
+
+    constexpr static value_tag_t value;
+    constexpr static elem_tag_t elem;
+    constexpr static attr_tag_t attr;
+
+  public:
+    std::string type;
+    std::map<std::string, std::string, std::less<>> attrs;
+  private:
+    std::vector<std::unique_ptr<value_t>> _children;
+
+  public:
+    inline std::string& get_or_create_attr(std::string_view attr) {
+      // This will emplace if it doesn't exist, and find if it does
+      return attrs.emplace(attr, std::string()).first->second;
+    }
+    inline std::string& get_or_create_attr(std::string&& attr) {
+      // This will emplace if it doesn't exist, and find if it does
+      return attrs.emplace(std::move(attr), std::string()).first->second;
+    }
+    inline bool attr_equals(std::string_view attr, std::string_view val) const {
+      if (auto iter = attrs.find(attr); iter != attrs.end()) return iter->second == val;
+      else return false;
+    }
+
+  public:
+    template<typename... Args>
+    inline std::string& add_value(Args... args) {
+      auto& ret = _children.emplace_back(std::make_unique<value_t>(std::in_place_type<std::string>, std::forward<Args>(args)...));
+      return std::get<std::string>(*ret);
+    }
+    template<typename... Args>
+    inline markup_struct& add_elem(Args... args) {
+      auto& ret = _children.emplace_back(std::make_unique<value_t>(std::in_place_type<markup_struct>, std::forward<Args>(args)...));
+      return std::get<markup_struct>(*ret);
+    }
+    inline void add() {}
+    template<typename ConstructorArg, typename... Args>
+    inline void add(value_tag_t, ConstructorArg carg, Args... args) {
+      add_value(std::forward<ConstructorArg>(carg));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename ConstructorArg, typename... Args>
+    inline void add(elem_tag_t, ConstructorArg carg, Args... args) {
+      add_elem(std::forward<ConstructorArg>(carg));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(attr_tag_t, std::string name, std::string value, Args... args) {
+      get_or_create_attr(name) = value;
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(std::string str, Args... args) {
+      _children.emplace_back(std::make_unique<value_t>(std::in_place_type<std::string>, std::move(str)));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(markup_struct ms, Args... args) {
+      _children.emplace_back(std::make_unique<value_t>(std::in_place_type<markup_struct>, std::move(ms)));
+      add(std::forward<Args>(args)...);
+    }
+    template<typename... Args>
+    inline void add(value_t v, Args... args) {
+      _children.emplace_back(std::make_unique<value_t>(std::move(v)));
+      add(std::forward<Args>(args)...);
+    }
+    inline markup_struct& get_child_by_attr(std::string_view attr, std::string_view val) const {
+      for (auto& i : _children) {
+        try {
+          if (auto& x = std::get<markup_struct>(*i); x.attr_equals(attr, val))
+            return x;
+        }
+        catch (...) {}
+      }
+      throw std::out_of_range("No child had the given attribute");
+    }
+    inline markup_struct& get_child_by_type(std::string_view type) const {
+      for (auto& i : _children) {
+        try {
+          if (auto& x = std::get<markup_struct>(*i); x.type == type)
+            return x;
+        }
+        catch (...) {}
+      }
+      throw std::out_of_range("No child had the given attribute");
+    }
+    size_t n_children() const { return _children.size(); }
+
+  public:
+    class iterator {
+      friend markup_struct;
+    private:
+      decltype(_children)::iterator iter;
+
+    public:
+      using iterator_category = std::random_access_iterator_tag;
+      using value_type = value_t;
+      using difference_type = decltype(iter)::difference_type;
+      using pointer = value_type*;
+      using reference = value_type&;
+
+    public:
+      inline iterator& operator++() { iter++; return *this; }
+      inline iterator& operator--() { iter--; return *this; }
+      inline iterator& operator++(int) { ++iter; return *this; }
+      inline iterator& operator--(int) { --iter; return *this; }
+      inline ssize_t operator-(const iterator& other) { return iter - other.iter; }
+      inline iterator operator+(difference_type s) const { return iter + s; }
+      inline iterator operator[](difference_type s) const { return iter + s; }
+      inline iterator operator-(difference_type s) const { return iter - s; }
+      inline iterator& operator+=(difference_type s) { iter += s; return *this; }
+      inline iterator& operator-=(difference_type s) { iter -= s; return *this; }
+      inline reference operator*() { return **iter; }
+      inline pointer operator->() { return (*iter).get(); }
+      inline const value_t& operator*() const { return **iter; }
+      inline const value_t* operator->() const { return (*iter).get(); }
+      bool operator==(const iterator& other) const { return iter == other.iter; }
+      bool operator!=(const iterator& other) const { return iter != other.iter; }
+
+    private:
+      inline iterator(decltype(iter)&& iter) : iter{std::move(iter)} {}
+    public:
+      inline iterator() = default;
+    };
+    class const_iterator {
+      friend markup_struct;
+    private:
+      decltype(_children)::const_iterator iter;
+
+    public:
+      using iterator_category = std::random_access_iterator_tag;
+      using value_type = value_t;
+      using difference_type = decltype(iter)::difference_type;
+      using pointer = const value_type*;
+      using reference = const value_type&;
+
+    public:
+      inline const_iterator& operator++() { iter++; return *this; }
+      inline const_iterator& operator--() { iter--; return *this; }
+      inline const_iterator& operator++(int) { ++iter; return *this; }
+      inline const_iterator& operator--(int) { --iter; return *this; }
+      inline ssize_t operator-(const const_iterator& other) { return iter - other.iter; }
+      inline const_iterator operator+(ssize_t s) const { return iter + s; }
+      inline const_iterator operator-(ssize_t s) const { return iter - s; }
+      inline const_iterator& operator+=(ssize_t s) { iter += s; return *this; }
+      inline const_iterator& operator-=(ssize_t s) { iter -= s; return *this; }
+      inline reference operator*() const { return **iter; }
+      inline pointer operator->() const { return (*iter).get(); }
+      bool operator==(const const_iterator& other) const { return iter == other.iter; }
+      bool operator!=(const const_iterator& other) const { return iter != other.iter; }
+
+    private:
+      inline const_iterator(decltype(iter)&& iter) : iter{std::move(iter)} {}
+    public:
+      inline const_iterator() = default;
+    };
+
+  public:
+    inline iterator begin() { return _children.begin(); }
+    inline iterator end() { return _children.end(); }
+    inline const_iterator begin() const { return _children.begin(); }
+    inline const_iterator end() const { return _children.end(); }
+    inline const_iterator cbegin() const { return _children.cbegin(); }
+    inline const_iterator cend() const { return _children.cend(); }
+
+  public:
+    inline markup_struct(std::string type) : type{std::move(type)} {}
+    template<typename... Args>
+    inline markup_struct(std::string type, Args... args) : type{std::move(type)} {
+      add(std::forward<Args>(args)...);
+    }
+
+  public:
+    inline markup_struct() = default;
+    inline markup_struct(const markup_struct& other) : type{other.type}, attrs{other.attrs} {
+      abort();
+      for (auto& i : other._children) {
+        _children.push_back(std::make_unique<value_t>(*i));
+      }
+    };
+    inline markup_struct(markup_struct&& other) = default;
+
+    inline markup_struct& operator=(const markup_struct& other) {
+      abort();
+      type = other.type;
+      attrs = other.attrs;
+      for (auto& i : other._children) {
+        _children.push_back(std::make_unique<value_t>(*i));
+      }
+      return *this;
+    }
+    inline markup_struct& operator=(markup_struct&& other) = default;
+
+  public:
+    inline bool operator==(const markup_struct& other) const {
+      return std::equal(begin(), end(), other.begin(), other.end()) && attrs == other.attrs && type == other.type;
+    }
+    inline bool operator!=(const markup_struct& other) const {
+      return !(*this == other);
+    }
   };
 }
+
+

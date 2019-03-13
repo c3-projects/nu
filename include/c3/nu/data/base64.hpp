@@ -2,7 +2,7 @@
 
 #include "c3/nu/data/base.hpp"
 #include "c3/nu/bits.hpp"
-#include "c3/nu/int_maths.hpp"
+#include "c3/nu/integer.hpp"
 
 #include <string>
 #include <map>
