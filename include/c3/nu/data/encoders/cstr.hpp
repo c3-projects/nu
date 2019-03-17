@@ -3,7 +3,7 @@
 #include <string>
 #include <regex>
 #include <codecvt>
-#include "c3/nu/data/hex.hpp"
+#include "c3/nu/data/encoders/hex.hpp"
 
 namespace c3::nu {
   std::string cstr_encode(const std::string_view buf) {

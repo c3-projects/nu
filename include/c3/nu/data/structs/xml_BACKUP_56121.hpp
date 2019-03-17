@@ -1,6 +1,7 @@
 #pragma once
 
 #include "c3/nu/data/structs/base.hpp"
+<<<<<<< HEAD
 #include "c3/nu/safe_iter.hpp"
 #include "c3/nu/integer.hpp"
 #include <regex>
@@ -136,29 +137,64 @@ namespace c3::nu {
       str.append(xml_escape(ms.type));
       str.push_back('>');
     }
+=======
+#include <regex>
+
+namespace c3::nu {
+  inline std::string xml_escape(std::string_view str) {
+
+  }
+  inline std::string xml_tag_escape(std::string_view str) {
+    std::string ret;
+    std::back_insert_iterator out_iter{ret};
+    std::regex_replace(ret, str.begin(), str.end(), std::regex(R"(\")"), "&quot;");
+    return ret;
+  }
+
+  inline std::string _xml_encode_impl(const markup_struct& ms, std::string& str) {
+    str.push_back('<');
+    str.append(xml_escape(ms.type));
+
+    // Encode attrs
+    {
+      auto iter = ms.attrs.begin();
+      while(true) {
+        str.push_back('"');
+        str.append(xml_tag_escape(iter->first));
+        str.append("\":\"");
+        str.append(xml_tag_escape(iter->second));
+        str.push_back('"');
+        if (++iter == ms.attrs.end())
+          break;
+        else
+          str.push_back(' ');
+      }
+    }
+    str.push_back('>');
+
+    for (auto& i : ms) {
+      std::visit([&](auto x) {
+        using U = typename remove_all<decltype(x)>::type;
+
+        if (std::is_same_v<U, markup_struct>)
+          _xml_encode_impl(ms, str);
+        else xml_escape(str);
+      },i);
+    }
+
+    str.append("</");
+    str.append(xml_escape(ms.type));
+    str.push_back('>');
+>>>>>>> Started work on xml
   }
 
   inline std::string xml_encode(const markup_struct& ms) {
     std::string ret;
 
+<<<<<<< HEAD
     detail::xml_encode_impl(ms, ret);
 
     return ret;
-  }
-
-  inline std::string xml_encode(std::string_view value) {
-    return xml_string_escape(value);
-  }
-
-  inline std::string xml_encode(const markup_struct::value_t& v) {
-    return std::visit([](auto& x) -> std::string {
-      if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, markup_struct>) {
-        return xml_encode(x);
-      }
-      else {
-        return xml_encode(std::string_view(x));
-      }
-    }, v);
   }
 
   inline markup_struct::value_t _xml_decode_impl(safe_iter<std::string_view::iterator>& iter) {
@@ -248,4 +284,10 @@ namespace c3::nu {
     auto iter = safe(str).begin();
     return std::get<markup_struct>(_xml_decode_impl(iter));
   }
+=======
+    _xml_encode_impl(ms, ret);
+
+    return ret;
+  }
+>>>>>>> Started work on xml
 }

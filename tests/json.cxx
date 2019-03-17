@@ -1,4 +1,4 @@
-#include "c3/nu/data/structs/json.hpp"
+#include "c3/nu/data/encoders/json.hpp"
 
 #include <iostream>
 #include <fstream>
