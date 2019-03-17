@@ -6,8 +6,10 @@
 #include <type_traits>
 
 #define C3_NU_DEFER_SERIALISATION_TYPE(TYPE, BASE_TYPE) \
-  template<typename T> \
-  friend T c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
+  friend c3::nu::data c3::nu::serialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
+  friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
   private: \
   static TYPE _deserialise(c3::nu::data_const_ref b) { \
     return static_cast<TYPE>(c3::nu::deserialise<BASE_TYPE>(b)); \
@@ -17,10 +19,12 @@
   }
 
 #define C3_NU_DEFER_STATIC_SERIALISATION_TYPE(TYPE, BASE_TYPE) \
-  template<typename T> \
-  friend T c3::nu::deserialise(c3::nu::data_const_ref); \
-  template<typename T> \
+  template<typename TemplateTypeArg69> \
+  friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
   friend constexpr size_t c3::nu::serialised_size(); \
+  template<typename TemplateTypeArg69> \
+  friend void c3::nu::serialise_static(const TemplateTypeArg69&, c3::nu::data_ref d); \
   private: \
   static constexpr size_t _serialised_size = c3::nu::serialised_size<BASE_TYPE>(); \
   private: \
@@ -32,8 +36,10 @@
   }
 
 #define C3_NU_DEFER_SERIALISATION_VAR(TYPE, BASE_VAR) \
-  template<typename T> \
-  friend T c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
+  friend c3::nu::data c3::nu::serialise(const TemplateTypeArg69&); \
+  template<typename TemplateTypeArg69> \
+  friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
   private: \
   static TYPE _deserialise(c3::nu::data_const_ref b) { \
     return static_cast<TYPE>(c3::nu::deserialise<decltype(BASE_VAR)>(b)); \
@@ -43,10 +49,12 @@
   }
 
 #define C3_NU_DEFER_STATIC_SERIALISATION_VAR(TYPE, BASE_VAR) \
-  template<typename T> \
-  friend T c3::nu::deserialise(c3::nu::data_const_ref); \
-  template<typename T> \
+  template<typename TemplateTypeArg69> \
+  friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
   friend constexpr size_t c3::nu::serialised_size(); \
+  template<typename TemplateTypeArg69> \
+  friend void c3::nu::serialise_static(const TemplateTypeArg69&, c3::nu::data_ref d); \
   private: \
   static constexpr size_t _serialised_size = c3::nu::serialised_size<decltype(BASE_VAR)>(); \
   private: \
@@ -58,15 +66,19 @@
   }
 
 #define C3_NU_DEFINE_DESERIALISE(TYPE, DATA_VAR_NAME) \
-  template<typename T> \
-  friend T c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
+  friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
+  friend c3::nu::data c3::nu::serialise(const TemplateTypeArg69&); \
   private: \
   static TYPE _deserialise(c3::nu::data_const_ref DATA_VAR_NAME)
 
 #define C3_NU_DEFINE_STATIC_DESERIALISE(TYPE, SERIALISED_SIZE, DATA_VAR_NAME) \
-  template<typename T> \
-  friend T c3::nu::deserialise(c3::nu::data_const_ref); \
-  template<typename T> \
+  template<typename TemplateTypeArg69> \
+  friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
+  template<typename TemplateTypeArg69> \
+  friend void c3::nu::serialise_static(const TemplateTypeArg69&, c3::nu::data_ref d); \
+  template<typenameTemplateTypeArg69> \
   friend constexpr size_t c3::nu::serialised_size(); \
   private: \
   static constexpr size_t _serialised_size = SERIALISED_SIZE; \
