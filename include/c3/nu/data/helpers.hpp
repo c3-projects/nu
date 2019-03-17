@@ -78,7 +78,7 @@
   friend TemplateTypeArg69 c3::nu::deserialise(c3::nu::data_const_ref); \
   template<typename TemplateTypeArg69> \
   friend void c3::nu::serialise_static(const TemplateTypeArg69&, c3::nu::data_ref d); \
-  template<typenameTemplateTypeArg69> \
+  template<typename TemplateTypeArg69> \
   friend constexpr size_t c3::nu::serialised_size(); \
   private: \
   static constexpr size_t _serialised_size = SERIALISED_SIZE; \
