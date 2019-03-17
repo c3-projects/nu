@@ -1,0 +1,31 @@
+The code in this repository falls into at least one of two categories:
+*	Code that interfaces with the programmer
+*	Code that interfaces with the outside world
+
+In the event of a clash between these two rulesets, 
+generally the outside world wins
+
+================================================================================
+
+The programmer-code interface:
+
+1.	Make it reasonable. Does a specific edge case need it's own function, 
+	or do you need to rejiggle the design?
+
+2.	Make it fast, but not to the exclusion of everything else.
+
+3.	Make it usable. Do the function names make sense, and do they have a
+	sensible number of arguments, with sensible names?
+
+================================================================================
+
+The outside-code interface:
+
+1.	The most important goal is that of security: a hackable interface is of 
+	very little use.
+
+2.	Parse weak, emit strong: No-one will thank you for a parser that 
+	requires to-the-letter spec adherence, but everyone _will_ if you emit 
+	technically invalid output that breaks someone's stuff
+
+================================================================================
