@@ -1,5 +1,3 @@
-#pragma once
-
 #include "c3/nu/moveable_ptr.hpp"
 
 #include <stdexcept>
@@ -25,6 +23,6 @@ int main() {
   if (*_ptr != b)
     throw std::runtime_error("Pointer did not move to value");
 
-  if (*ptr != nullptr)
+  if (ptr != nullptr)
     throw std::runtime_error("Pointer did not move from value");
 }

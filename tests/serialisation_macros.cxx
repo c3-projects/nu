@@ -16,14 +16,14 @@ public:
 
 class type_1 : public nu::static_serialisable<type_1> {
 public:
-  float bob;
+  uint bob;
 
 public:
-  type_1(int bob) : bob{static_cast<float>(bob)} {}
-  operator int() const { return static_cast<int>(bob); }
+  type_1(int bob) : bob{static_cast<uint>(bob)} {}
+  operator int() const { return static_cast<uint>(bob); }
 
 public:
-  C3_NU_DEFER_STATIC_SERIALISATION_TYPE(type_1, int)
+  C3_NU_DEFER_STATIC_SERIALISATION_TYPE(type_1, uint)
 };
 
 class type_2 : public nu::serialisable<type_2> {
@@ -51,11 +51,11 @@ public:
 
 class type_4 : public nu::static_serialisable<type_4> {
 public:
-  float bob;
+  int bob;
 
 public:
-  type_4(int bob) : bob{static_cast<float>(bob)} {}
-  operator int() const { return static_cast<int>(bob); }
+  type_4(int bob) : bob{bob} {}
+  operator int() const { return bob; }
 
 public:
   void _serialise_static(nu::data_ref b) const override {
@@ -68,11 +68,11 @@ public:
 
 class type_5 : public nu::serialisable<type_4> {
 public:
-  float bob;
+  int bob;
 
 public:
-  type_5(int bob) : bob{static_cast<float>(bob)} {}
-  operator int() const { return static_cast<int>(bob); }
+  type_5(int bob) : bob{bob} {}
+  operator int() const { return bob; }
 
 public:
   nu::data _serialise() const override {

@@ -40,6 +40,7 @@ namespace c3::nu {
     constexpr moveable_ptr& operator=(const moveable_ptr&) = delete;
     constexpr moveable_ptr& operator=(moveable_ptr&& other) {
       ptr = other.release();
+      return *this;
     }
   };
 }
