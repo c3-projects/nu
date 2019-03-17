@@ -23,9 +23,9 @@ namespace c3::nu {
 
   template<typename Head, typename... Tail>
   inline void expand_static_unsafe(data_const_ref b, Head& head, Tail&... tail) {
-    head = deserialise<Head>(b);
+    constexpr auto len = serialised_size<Head>();
+    head = deserialise<Head>(b.subspan(0, len));
     if constexpr (sizeof...(Tail) > 0) {
-      auto len = serialised_size<Head>();
       expand_static_unsafe({b.data() + len, static_cast<data_ref::size_type>(b.size() - len)},
                            tail...);
     }
