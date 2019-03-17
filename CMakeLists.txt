@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-set(VERSION 0.11.2)
+set(VERSION 0.11.3)
 
 string(REGEX REPLACE "-.*" "" FRIENDLY_VERSION ${VERSION})
 
