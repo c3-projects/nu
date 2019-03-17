@@ -1,4 +1,4 @@
-#include "c3/nu/data/cstr.hpp"
+#include "c3/nu/data/encoders/cstr.hpp"
 
 #include <iostream>
 

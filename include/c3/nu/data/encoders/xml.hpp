@@ -1,6 +1,6 @@
 #pragma once
 
-#include "c3/nu/data/structs/base.hpp"
+#include "c3/nu/data/encoders/base.hpp"
 #include "c3/nu/safe_iter.hpp"
 #include "c3/nu/integer.hpp"
 #include <regex>

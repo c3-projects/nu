@@ -1,8 +1,7 @@
 #pragma once
 
-#include "c3/nu/data/cstr.hpp"
-#include "c3/nu/data/base64.hpp"
-#include "c3/nu/data/structs/base.hpp"
+#include "c3/nu/data/encoders/cstr.hpp"
+#include "c3/nu/data/encoders/base.hpp"
 #include "c3/nu/types.hpp"
 #include "c3/nu/safe_iter.hpp"
 

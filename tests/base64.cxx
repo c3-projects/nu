@@ -1,4 +1,4 @@
-#include "c3/nu/data/base64.hpp"
+#include "c3/nu/data/encoders/base64.hpp"
 
 using namespace c3::nu;
 

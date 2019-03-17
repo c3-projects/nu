@@ -1,4 +1,4 @@
-#include "c3/nu/data/hex.hpp"
+#include "c3/nu/data/encoders/hex.hpp"
 #include "c3/nu/data.hpp"
 
 using namespace c3::nu;
