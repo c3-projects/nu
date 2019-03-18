@@ -30,8 +30,7 @@ namespace c3::nu {
         return x ? "true" : "false";
       else if constexpr (std::is_same_v<T, std::vector<obj_struct>>) {
         std::string acc = "[";
-        auto iter = x.begin();
-        while (true) {
+        for (auto iter = x.begin(); iter != x.end(); ++iter) {
           acc.append(json_encode(*iter));
           if (++iter == x.end())
             break;
