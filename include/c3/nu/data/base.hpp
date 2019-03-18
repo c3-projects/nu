@@ -29,10 +29,10 @@ namespace c3::nu {
     const char* msg;
 
   public:
-    const char* what() const noexcept override { return msg; }
+    inline const char* what() const noexcept override { return msg; }
 
   public:
-    serialisation_failure(decltype(msg) msg = "Serialisation failed") : msg{msg} {}
+    inline serialisation_failure(decltype(msg) msg = "Serialisation failed") : msg{msg} {}
   };
 
   /// Calculates the floor of the base 2^bits logarithm of i
@@ -65,7 +65,7 @@ namespace c3::nu {
 
   /// XXX: does not strip qualifiers, as that would confuse parameter type
   template<typename T>
-  data serialise(const T& t) {
+  inline data serialise(const T& t) {
     if constexpr (std::is_base_of_v<serialisable<T>, T>)
       return static_cast<const serialisable<T>&>(t)._serialise();
     else {
@@ -179,7 +179,7 @@ namespace c3::nu {
     virtual void _serialise_static(data_ref data) const = 0;
 
   private:
-    data _serialise() const override {
+    inline data _serialise() const override {
       data ret(serialised_size<T>());
       _serialise_static(ret);
       return ret;

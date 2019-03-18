@@ -282,8 +282,8 @@ namespace c3::nu {
       inline pointer operator->() { return (*iter).get(); }
       inline const value_t& operator*() const { return **iter; }
       inline const value_t* operator->() const { return (*iter).get(); }
-      bool operator==(const iterator& other) const { return iter == other.iter; }
-      bool operator!=(const iterator& other) const { return iter != other.iter; }
+      inline bool operator==(const iterator& other) const { return iter == other.iter; }
+      inline bool operator!=(const iterator& other) const { return iter != other.iter; }
 
     private:
       inline iterator(decltype(iter)&& iter) : iter{std::move(iter)} {}
@@ -314,8 +314,8 @@ namespace c3::nu {
       inline const_iterator& operator-=(ssize_t s) { iter -= s; return *this; }
       inline reference operator*() const { return **iter; }
       inline pointer operator->() const { return (*iter).get(); }
-      bool operator==(const const_iterator& other) const { return iter == other.iter; }
-      bool operator!=(const const_iterator& other) const { return iter != other.iter; }
+      inline bool operator==(const const_iterator& other) const { return iter == other.iter; }
+      inline bool operator!=(const const_iterator& other) const { return iter != other.iter; }
 
     private:
       inline const_iterator(decltype(iter)&& iter) : iter{std::move(iter)} {}

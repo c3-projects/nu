@@ -140,17 +140,17 @@ namespace c3::nu {
 
   public:
     /// Gets a read-only handle
-    handle_ro get_ro() const { return {this}; }
+    inline handle_ro get_ro() const { return {this}; }
     /// Tries to get a read-only handle within the given timeout, otherwise throws timed_out
-    handle_ro get_ro(timeout_t timeout) const { return {this, timeout}; }
+    inline handle_ro get_ro(timeout_t timeout) const { return {this, timeout}; }
 
     /// Gets a read/write handle
-    handle_rw get_rw() { return {this}; }
+    inline handle_rw get_rw() { return {this}; }
     /// Tries to get a read/write handle within the given timeout, otherwise throws timed_out
-    handle_rw get_rw(timeout_t timeout) { return {this, timeout}; }
+    inline handle_rw get_rw(timeout_t timeout) { return {this, timeout}; }
 
-    handle_rw operator*() { return get_rw(); }
-    handle_ro operator*() const { return get_ro(); }
+    inline handle_rw operator*() { return get_rw(); }
+    inline handle_ro operator*() const { return get_ro(); }
 
   public:
     template<typename... Args>

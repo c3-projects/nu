@@ -6,7 +6,7 @@
 #include "c3/nu/data/encoders/hex.hpp"
 
 namespace c3::nu {
-  std::string cstr_encode(const std::string_view buf) {
+  inline std::string cstr_encode(const std::string_view buf) {
     std::string ret;
     for (auto i : buf) {
       switch (i) {
@@ -39,7 +39,7 @@ namespace c3::nu {
     return ret;
   }
 
-  std::string cstr_decode(const std::string_view buf) {
+  inline std::string cstr_decode(const std::string_view buf) {
     std::string ret;
 
     for (auto iter = buf.begin(); iter != buf.end(); ++iter) {
