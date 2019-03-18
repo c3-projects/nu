@@ -55,11 +55,20 @@ namespace c3::nu {
     inline bool remove_child(const std::string& name) {
       return get_impl<parent_t>().erase(name) != 0;
     }
-    inline obj_struct& get_child(const std::string& name) const {
+    inline const obj_struct& get_child(const std::string& name) const {
+      return std::visit([&](auto& x) -> const obj_struct& {
+        // If it is not a parent, then there is no chance of finding it,
+        // even if it is monostate
+        if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, parent_t>)
+          return x.at(name);
+        else throw std::out_of_range("get_child called on incorrect node type");
+      }, _impl);
+    }
+    inline obj_struct& get_child(const std::string& name) {
       return std::visit([&](auto& x) -> obj_struct& {
         // If it is not a parent, then there is no chance of finding it,
         // even if it is monostate
-        if constexpr (std::is_same_v<decltype(x), parent_t>)
+        if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, parent_t>)
           return x.at(name);
         else throw std::out_of_range("get_child called on incorrect node type");
       }, _impl);
