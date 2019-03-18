@@ -166,18 +166,18 @@ namespace c3::nu {
     }
 
   public:
-    static cancellable<T> external(std::function<std::optional<T>()> get_state,
+    static inline cancellable<T> external(std::function<std::optional<T>()> get_state,
                                    std::function<bool()> is_working) {
       return { std::make_shared<external_state>(get_state, is_working) };
     }
 
-    static cancellable<T> external(std::function<std::optional<T>()> get_state) {
+    static inline cancellable<T> external(std::function<std::optional<T>()> get_state) {
       return { std::make_shared<external_state>(get_state) };
     }
 
   public:
     template<typename Other>
-    operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
+    inline operator cancellable<Other>() { return map([](T t) { return Other{t}; }); }
 
   public:
     // For when you need to return a cancellable, but you already have the value
@@ -449,7 +449,7 @@ namespace c3::nu {
     inline cancellable<T> get_cancellable() { return { shared_state }; }
 
   public:
-    cancellable_provider() : shared_state{std::make_shared<typename cancellable<T>::simple_state>()} {}
-    cancellable_provider(decltype(shared_state) shared_state) : shared_state{shared_state} {}
+    inline cancellable_provider() : shared_state{std::make_shared<typename cancellable<T>::simple_state>()} {}
+    inline cancellable_provider(decltype(shared_state) shared_state) : shared_state{shared_state} {}
   };
 }

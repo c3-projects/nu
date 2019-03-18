@@ -110,12 +110,12 @@ namespace c3::nu {
     moveable_ptr<T> base = nullptr;
 
   public:
-    iterator begin() { return { std::begin(*base), std::end(*base) }; }
-    iterator end() { return { std::end(*base), std::end(*base) }; }
-    const_iterator begin() const { return { std::cbegin(*base), std::cend(*base) }; }
-    const_iterator end() const { return { std::cend(*base), std::cend(*base) }; }
-    const_iterator cbegin() const { return { std::cbegin(*base), std::cend(*base) }; }
-    const_iterator cend() const { return { std::cend(*base), std::cend(*base) }; }
+    inline iterator begin() { return { std::begin(*base), std::end(*base) }; }
+    inline iterator end() { return { std::end(*base), std::end(*base) }; }
+    inline const_iterator begin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    inline const_iterator end() const { return { std::cend(*base), std::cend(*base) }; }
+    inline const_iterator cbegin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    inline const_iterator cend() const { return { std::cend(*base), std::cend(*base) }; }
 
   public:
     inline safe(T& t) : base{&t} {}
@@ -130,10 +130,10 @@ namespace c3::nu {
     moveable_ptr<T> base = nullptr;
 
   public:
-    const_iterator begin() const { return { std::cbegin(*base), std::cend(*base) }; }
-    const_iterator end() const { return { std::cend(*base), std::cend(*base) }; }
-    const_iterator cbegin() const { return { std::cbegin(*base), std::cend(*base) }; }
-    const_iterator cend() const { return { std::cend(*base), std::cend(*base) }; }
+    inline const_iterator begin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    inline const_iterator end() const { return { std::cend(*base), std::cend(*base) }; }
+    inline const_iterator cbegin() const { return { std::cbegin(*base), std::cend(*base) }; }
+    inline const_iterator cend() const { return { std::cend(*base), std::cend(*base) }; }
 
   public:
     inline safe(T& t) : base{&t} {}
