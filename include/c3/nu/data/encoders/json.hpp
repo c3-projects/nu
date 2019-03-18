@@ -63,6 +63,8 @@ namespace c3::nu {
         }
       acc.push_back('}');
     }
+    else if (ds.is_empty())
+      acc.append("{}");
     else {
       acc += json_encode_datum(ds.get_value());
     }
