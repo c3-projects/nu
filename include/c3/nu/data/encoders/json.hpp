@@ -32,11 +32,10 @@ namespace c3::nu {
         std::string acc = "[";
         for (auto iter = x.begin(); iter != x.end(); ++iter) {
           acc.append(json_encode(*iter));
-          if (++iter == x.end())
-            break;
-          else
-            acc.push_back(',');
+          acc.push_back(',');
         }
+        // Remove trailing comma
+        acc.pop_back();
         acc.push_back(']');
         return acc;
       }
