@@ -41,6 +41,9 @@ namespace c3::nu {
     inline bool is_parent() const {
       return std::holds_alternative<parent_t>(_impl);
     }
+    inline bool is_empty() const {
+      return std::holds_alternative<std::monostate>(_impl);
+    }
 
   private:
     template<typename T>
