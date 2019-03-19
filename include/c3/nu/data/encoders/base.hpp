@@ -125,6 +125,18 @@ namespace c3::nu {
     inline parent_t::const_iterator cend() const { return std::get<parent_t>(_impl).cend(); }
 
   public:
+    inline void push_back(obj_struct c) { get_impl<arr_t>().push_back(c); }
+    template<typename... Args>
+    inline void emplace_back(Args... args) { get_impl<arr_t>().emplace_back(std::forward<Args>(args)...); }
+
+    inline obj_struct pop_back() {
+      auto& arr = get_impl<arr_t>();
+      auto ret = std::move(arr.back());
+      arr.pop_back();
+      return ret;
+    }
+
+  public:
     template<typename T>
     inline T& as() {
       return get_or_create_alternative<T>(get_impl<value_t>());
@@ -161,13 +173,16 @@ namespace c3::nu {
       else if constexpr (std::is_same_v<U, std::nullptr_t> || std::is_same_v<U, std::monostate>)
         set_value<std::monostate>();
       else if constexpr (std::is_same_v<U, bool>)
-        set_value<bool>(t);
+        set_value<bool_t>(t);
       else if constexpr (std::is_floating_point_v<U>)
-        set_value<double>(t);
+        set_value<float_t>(t);
       else if constexpr (std::is_integral_v<U>)
-        set_value<int64_t>(t);
+        set_value<int_t>(t);
       else if constexpr (std::is_same_v<U, arr_t>)
         set_value<arr_t>(t);
+      else if constexpr (std::is_enum_v<U> &&
+                         integer_can_hold<int_t, std::underlying_type<U>::type>())
+        set_value<int_t>(static_cast<int_t>(t));
       else
         set_value<std::string>(std::forward<T&&>(t));
     }
@@ -222,6 +237,10 @@ namespace c3::nu {
     inline std::string& get_or_create_attr(std::string&& attr) {
       // This will emplace if it doesn't exist, and find if it does
       return attrs.emplace(std::move(attr), std::string()).first->second;
+    }
+    inline bool has_attr(std::string_view attr) const {
+      auto iter = attrs.find(attr);
+      return iter != attrs.end();
     }
     inline bool attr_equals(std::string_view attr, std::string_view val) const {
       if (auto iter = attrs.find(attr); iter != attrs.end()) return iter->second == val;

@@ -64,7 +64,7 @@ namespace c3::nu {
 
   template<typename Holder, typename Holdee>
   constexpr bool integer_can_hold() {
-    return std::is_signed_v<Holder> == std::is_signed_v<Holdee> &&
+    return !(std::is_unsigned_v<Holder> && std::is_signed_v<Holdee>) &&
         std::numeric_limits<Holder>::digits >= std::numeric_limits<Holdee>::digits;
   }
 
