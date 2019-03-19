@@ -76,6 +76,32 @@ namespace c3::nu {
         else throw std::out_of_range("get_child called on incorrect node type");
       }, _impl);
     }
+    /// Returns nullptr if no such child exists, and throws an exception if not a parent
+    inline obj_struct* try_get_child(const std::string& name) {
+      return std::visit([&](auto& x) -> obj_struct* {
+        // If it is not a parent, then there is no chance of finding it,
+        // even if it is monostate
+        if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, parent_t>) {
+          if (auto iter = x.find(name); iter != x.end())
+            return &iter->second;
+          else return nullptr;
+        }
+        else throw std::out_of_range("get_child called on incorrect node type");
+      }, _impl);
+    }
+    /// Returns nullptr if no such child exists, and throws an exception if not a parent
+    inline const obj_struct* try_get_child(const std::string& name) const {
+      return std::visit([&](auto& x) -> const obj_struct* {
+        // If it is not a parent, then there is no chance of finding it,
+        // even if it is monostate
+        if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, parent_t>) {
+          if (auto iter = x.find(name); iter != x.end())
+            return &iter->second;
+          else return nullptr;
+        }
+        else throw std::out_of_range("get_child called on incorrect node type");
+      }, _impl);
+    }
     inline bool rename_child(const std::string& old_name, const std::string& new_name) {
       parent_t& m = get_impl<parent_t>();
 
@@ -97,6 +123,18 @@ namespace c3::nu {
     inline parent_t::const_iterator end() const { return std::get<parent_t>(_impl).end(); }
     inline parent_t::const_iterator cbegin() const { return std::get<parent_t>(_impl).cbegin(); }
     inline parent_t::const_iterator cend() const { return std::get<parent_t>(_impl).cend(); }
+
+  public:
+    inline void push_back(obj_struct c) { get_impl<arr_t>().push_back(c); }
+    template<typename... Args>
+    inline void emplace_back(Args... args) { get_impl<arr_t>().emplace_back(std::forward<Args>(args)...); }
+
+    inline obj_struct pop_back() {
+      auto& arr = get_impl<arr_t>();
+      auto ret = std::move(arr.back());
+      arr.pop_back();
+      return ret;
+    }
 
   public:
     template<typename T>
@@ -135,13 +173,16 @@ namespace c3::nu {
       else if constexpr (std::is_same_v<U, std::nullptr_t> || std::is_same_v<U, std::monostate>)
         set_value<std::monostate>();
       else if constexpr (std::is_same_v<U, bool>)
-        set_value<bool>(t);
+        set_value<bool_t>(t);
       else if constexpr (std::is_floating_point_v<U>)
-        set_value<double>(t);
+        set_value<float_t>(t);
       else if constexpr (std::is_integral_v<U>)
-        set_value<int64_t>(t);
+        set_value<int_t>(t);
       else if constexpr (std::is_same_v<U, arr_t>)
         set_value<arr_t>(t);
+      else if constexpr (std::is_enum_v<U> &&
+                         integer_can_hold<int_t, std::underlying_type<U>::type>())
+        set_value<int_t>(static_cast<int_t>(t));
       else
         set_value<std::string>(std::forward<T&&>(t));
     }
@@ -196,6 +237,10 @@ namespace c3::nu {
     inline std::string& get_or_create_attr(std::string&& attr) {
       // This will emplace if it doesn't exist, and find if it does
       return attrs.emplace(std::move(attr), std::string()).first->second;
+    }
+    inline bool has_attr(std::string_view attr) const {
+      auto iter = attrs.find(attr);
+      return iter != attrs.end();
     }
     inline bool attr_equals(std::string_view attr, std::string_view val) const {
       if (auto iter = attrs.find(attr); iter != attrs.end()) return iter->second == val;
