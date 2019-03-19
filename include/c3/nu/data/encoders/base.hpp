@@ -125,12 +125,12 @@ namespace c3::nu {
     inline parent_t::const_iterator cend() const { return std::get<parent_t>(_impl).cend(); }
 
   public:
-    inline void push_back(obj_struct c) { get_impl<arr_t>().push_back(c); }
+    inline void push_back(obj_struct c) { as<arr_t>().push_back(std::move(c)); }
     template<typename... Args>
-    inline void emplace_back(Args... args) { get_impl<arr_t>().emplace_back(std::forward<Args>(args)...); }
+    inline void emplace_back(Args... args) { as<arr_t>().emplace_back(std::forward<Args>(args)...); }
 
     inline obj_struct pop_back() {
-      auto& arr = get_impl<arr_t>();
+      auto& arr = as<arr_t>();
       auto ret = std::move(arr.back());
       arr.pop_back();
       return ret;
@@ -180,9 +180,10 @@ namespace c3::nu {
         set_value<int_t>(t);
       else if constexpr (std::is_same_v<U, arr_t>)
         set_value<arr_t>(t);
-      else if constexpr (std::is_enum_v<U> &&
-                         integer_can_hold<int_t, std::underlying_type<U>::type>())
+      else if constexpr (std::is_enum_v<U>) {
+        typename std::enable_if<integer_can_hold<int_t, std::underlying_type<U>::type>>::type _die;
         set_value<int_t>(static_cast<int_t>(t));
+      }
       else
         set_value<std::string>(std::forward<T&&>(t));
     }
