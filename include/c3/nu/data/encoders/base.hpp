@@ -76,6 +76,32 @@ namespace c3::nu {
         else throw std::out_of_range("get_child called on incorrect node type");
       }, _impl);
     }
+    /// Returns nullptr if no such child exists, and throws an exception if not a parent
+    inline obj_struct* try_get_child(const std::string& name) {
+      return std::visit([&](auto& x) -> obj_struct* {
+        // If it is not a parent, then there is no chance of finding it,
+        // even if it is monostate
+        if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, parent_t>) {
+          if (auto iter = x.find(name); iter != x.end())
+            return &iter->second;
+          else return nullptr;
+        }
+        else throw std::out_of_range("get_child called on incorrect node type");
+      }, _impl);
+    }
+    /// Returns nullptr if no such child exists, and throws an exception if not a parent
+    inline const obj_struct* try_get_child(const std::string& name) const {
+      return std::visit([&](auto& x) -> const obj_struct* {
+        // If it is not a parent, then there is no chance of finding it,
+        // even if it is monostate
+        if constexpr (std::is_same_v<typename remove_all<decltype(x)>::type, parent_t>) {
+          if (auto iter = x.find(name); iter != x.end())
+            return &iter->second;
+          else return nullptr;
+        }
+        else throw std::out_of_range("get_child called on incorrect node type");
+      }, _impl);
+    }
     inline bool rename_child(const std::string& old_name, const std::string& new_name) {
       parent_t& m = get_impl<parent_t>();
 
