@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-set(VERSION 0.11.11)
+set(VERSION 0.11.12)
 
 string(REGEX REPLACE "-.*" "" FRIENDLY_VERSION ${VERSION})
 
@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD 17)
 add_compile_options("-Wall" "-Wextra")
 
 find_package(Threads REQUIRED)
+
+find_path (GSL_INCLUDE_DIR NAMES span gsl)
+include_directories(${GSL_INCLUDE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include(GNUInstallDirs)
