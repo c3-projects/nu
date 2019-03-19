@@ -13,6 +13,9 @@ add_compile_options("-Wall" "-Wextra")
 
 find_package(Threads REQUIRED)
 
+find_path (GSL_INCLUDE_DIR NAMES span gsl)
+include_directories(${GSL_INCLUDE_DIR})
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include(GNUInstallDirs)
 
