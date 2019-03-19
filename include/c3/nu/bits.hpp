@@ -187,7 +187,7 @@ namespace c3::nu {
     }
 
     static constexpr size_t split_len(size_t n_bytes) {
-      return divide_ceil(n_bytes * CHAR_BIT, Bits);
+      return divide_ceil<size_t>(n_bytes * CHAR_BIT, Bits);
     }
     static constexpr size_t combine_len(size_t n_data) {
       return divide_ceil<size_t>(n_data * Bits, CHAR_BIT);
@@ -300,7 +300,7 @@ namespace c3::nu {
     }
 
     static constexpr size_t split_len(size_t n_bytes, n_bits_rep_t bits) {
-      return divide_ceil(n_bytes * CHAR_BIT, bits);
+      return divide_ceil<size_t>(n_bytes * CHAR_BIT, bits);
     }
     static constexpr size_t combine_len(size_t n_data, n_bits_rep_t bits) {
       return divide_ceil<size_t>(n_data * bits, CHAR_BIT - 1);

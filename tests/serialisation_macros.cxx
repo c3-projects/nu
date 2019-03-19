@@ -16,14 +16,14 @@ public:
 
 class type_1 : public nu::static_serialisable<type_1> {
 public:
-  uint bob;
+  unsigned int bob;
 
 public:
-  type_1(int bob) : bob{static_cast<uint>(bob)} {}
-  operator int() const { return static_cast<uint>(bob); }
+  type_1(int bob) : bob{static_cast<unsigned int>(bob)} {}
+  operator int() const { return static_cast<unsigned int>(bob); }
 
 public:
-  C3_NU_DEFER_STATIC_SERIALISATION_TYPE(type_1, uint)
+  C3_NU_DEFER_STATIC_SERIALISATION_TYPE(type_1, unsigned int)
 };
 
 class type_2 : public nu::serialisable<type_2> {
