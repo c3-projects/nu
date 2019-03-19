@@ -30,12 +30,14 @@ namespace c3::nu {
         return x ? "true" : "false";
       else if constexpr (std::is_same_v<T, std::vector<obj_struct>>) {
         std::string acc = "[";
-        for (auto iter = x.begin(); iter != x.end(); ++iter) {
-          acc.append(json_encode(*iter));
-          acc.push_back(',');
+        if (!x.empty()) {
+          for (auto iter = x.begin(); iter != x.end(); ++iter) {
+            acc.append(json_encode(*iter));
+            acc.push_back(',');
+          }
+          // Remove trailing comma
+          acc.pop_back();
         }
-        // Remove trailing comma
-        acc.pop_back();
         acc.push_back(']');
         return acc;
       }
