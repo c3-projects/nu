@@ -13,6 +13,8 @@ int main() {
   ds["wobble"] = true;
   ds["420"] = 0.5;
   ds["arr"].as<obj_struct::arr_t>() = { -1, 2, 3, 4 };
+  ds["empty_arr"].as<obj_struct::arr_t>();
+  ds["empty"] = nullptr;
 
   auto buf = json_encode(ds);
 
@@ -23,6 +25,7 @@ int main() {
   if (ds != _ds)
     throw std::runtime_error("Invalid buf");
 
+  /*
   std::ifstream ifs("testfiles/fuzz.json");
   std::string line;
   while (std::getline(ifs, line)) {
@@ -32,5 +35,6 @@ int main() {
       std::cerr << e.what() << std::endl;
     }
   }
+  */
 }
 
