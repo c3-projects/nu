@@ -3,6 +3,8 @@
 #include <ios>
 #include <iomanip>
 
+#include <sstream>
+
 #include "c3/nu/data/base.hpp"
 
 namespace c3::nu {
