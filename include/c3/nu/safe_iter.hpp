@@ -9,7 +9,7 @@
 namespace c3::nu {
   template<typename Iter>
   struct safe_iter_traits : public std::iterator_traits<Iter> {
-    using iterator_category = typename std::forward_iterator_tag;
+    using iterator_category = std::forward_iterator_tag;
   };
 
   template<typename Iter>

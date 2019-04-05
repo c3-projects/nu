@@ -116,7 +116,7 @@ namespace c3::nu {
     }
 
   public:
-    constexpr bool operator<(const bigint& other) const {
+    inline bool operator<(const bigint& other) const {
       if (_data.size() != other._data.size())
         return _data.size() < other._data.size();
       else {
@@ -127,7 +127,7 @@ namespace c3::nu {
       }
       return false;
     }
-    constexpr bool operator>(const bigint& other) const {
+    inline bool operator>(const bigint& other) const {
       if (_data.size() != other._data.size())
         return _data.size() > other._data.size();
       else {
@@ -138,8 +138,8 @@ namespace c3::nu {
       }
       return false;
     }
-    constexpr bool operator>=(const bigint& other) const { return !(*this < other); }
-    constexpr bool operator<=(const bigint& other) const { return !(*this > other); }
+    inline bool operator>=(const bigint& other) const { return !(*this < other); }
+    inline bool operator<=(const bigint& other) const { return !(*this > other); }
     inline bool operator==(const bigint& other) const { return _data == other._data; }
 
   public:

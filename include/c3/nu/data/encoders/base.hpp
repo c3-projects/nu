@@ -216,13 +216,13 @@ namespace c3::nu {
     using value_t = std::variant<std::string, markup_struct>;
 
   public:
-    class value_tag_t {};
-    class elem_tag_t {};
-    class attr_tag_t {};
+    struct value_tag_t {};
+    struct elem_tag_t {};
+    struct attr_tag_t {};
 
-    constexpr static value_tag_t value;
-    constexpr static elem_tag_t elem;
-    constexpr static attr_tag_t attr;
+    constexpr static value_tag_t value = {};
+    constexpr static elem_tag_t elem = {};
+    constexpr static attr_tag_t attr = {};
 
   public:
     std::string type;

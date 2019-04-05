@@ -23,7 +23,7 @@ int main() {
       *begin;
       throw std::runtime_error("Dereferencing at end did not throw an exception");
     }
-    catch (std::range_error) {}
+    catch (std::range_error&) {}
 
     ++begin;
 
@@ -31,7 +31,7 @@ int main() {
       *begin;
       throw std::runtime_error("Dereferencing after end did not throw an exception");
     }
-    catch (std::range_error) {}
+    catch (std::range_error&) {}
   }
 
   {
@@ -51,7 +51,7 @@ int main() {
       *begin;
       throw std::runtime_error("Dereferencing at const end did not throw an exception");
     }
-    catch (std::range_error) {}
+    catch (std::range_error&) {}
 
     ++begin;
 
@@ -59,7 +59,7 @@ int main() {
       *begin;
       throw std::runtime_error("Dereferencing after const end did not throw an exception");
     }
-    catch (std::range_error) {}
+    catch (std::range_error&) {}
   }
 
   return 0;
