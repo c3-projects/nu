@@ -73,8 +73,11 @@ namespace c3::nu {
 
     bits_ref bits{data_ref{ret}};
 
-    for (size_t i = 0; i < str.size() - padding_len; ++i)
+    for (size_t i = 0; i < str.size() - padding_len; ++i) {
+      if (std::isspace(str[i]))
+        continue;
       bits.set_datum(i * 6, base64_decode_lookup_table[str[i]].value());
+    }
 
     return ret;
   }
